@@ -1,0 +1,39 @@
+:root {
+  --color-bg: #FAF8F4;
+  --color-surface: #FFFFFF;
+  --color-border: #E8E2D6;
+  --color-row-divider: #F0ECE3;
+
+  --color-text: #2A241C;
+  --color-text-secondary: #6B6153;
+  --color-text-muted: #8A8074;
+  --color-text-table: #4A4232;
+
+  --color-gold: #C8A068;
+  --color-gold-dark: #8A6A2E;
+
+  --status-in-progress-bg: #F3E6C9;
+  --status-in-progress-text: #8A6A2E;
+  --status-overdue-bg: #F4DAD3;
+  --status-overdue-text: #9A3B2C;
+  --status-done-bg: #2A241C;
+  --status-done-text: #FFFFFF;
+  --status-new-bg: #EDE8DE;
+  --status-new-text: #6B6153;
+
+  --priority-high: #9A3B2C;
+  --priority-medium: #8A6A2E;
+  --priority-low: #6B6153;
+
+  --sidebar-bg: #2A241C;
+  --sidebar-active-bg: #3D3527;
+  --sidebar-text: #EFEAE0;
+  --sidebar-text-inactive: #C9C0B1;
+
+  --radius-card: 6px;
+  --radius-input: 5px;
+  --radius-pill: 20px;
+
+  --sidebar-width: 240px;
+  --topbar-height: 64px;
+}

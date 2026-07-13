@@ -1,0 +1,42 @@
+spring:
+  application:
+    name: task-manager
+  datasource:
+    url: jdbc:h2:mem:taskmanager;DB_CLOSE_DELAY=-1
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+
+app:
+  jwt:
+    # Dev-only secret. Replace via APP_JWT_SECRET env var before any real deployment.
+    secret: ${APP_JWT_SECRET:dev-only-secret-change-me-please-32-bytes-min}
+    access-token-ttl-seconds: 900
+    refresh-token-ttl-seconds: 43200
+server:
+  port: 8080
+
+---
+spring:
+  config:
+    activate:
+      on-profile: docker
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:postgres}:${DB_PORT:5432}/${DB_NAME:taskmanager}
+    driver-class-name: org.postgresql.Driver
+    username: ${DB_USER:taskmanager}
+    password: ${DB_PASSWORD:taskmanager}
+  h2:
+    console:
+      enabled: false

@@ -1,0 +1,139 @@
+@import "./tokens.css";
+
+* {
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: "Manrope", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-size: 14px;
+}
+
+a {
+  color: var(--color-gold-dark);
+  text-decoration: none;
+}
+a:hover {
+  color: var(--color-gold);
+}
+
+::placeholder {
+  color: #A79B8A;
+}
+
+select, input, textarea, button {
+  font-family: "Manrope", sans-serif;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 4px;
+}
+
+.card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  padding: 20px;
+}
+
+input[type="text"],
+input[type="password"],
+input[type="date"],
+input[type="search"],
+select,
+textarea {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-input);
+  padding: 9px 12px;
+  font-size: 13px;
+  background: #fff;
+  color: var(--color-text);
+}
+
+textarea {
+  resize: vertical;
+  font-family: inherit;
+}
+
+button {
+  cursor: pointer;
+  border-radius: var(--radius-input);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.btn-primary {
+  background: var(--color-text);
+  color: #fff;
+  border: none;
+  padding: 10px 16px;
+}
+.btn-primary:disabled {
+  background: #A79B8A;
+  cursor: not-allowed;
+}
+
+.btn-secondary {
+  background: #fff;
+  border: 1px solid var(--color-border);
+  color: var(--color-text-secondary);
+  padding: 10px 16px;
+}
+
+.btn-outline-gold {
+  background: #fff;
+  border: 1px solid var(--color-gold);
+  color: var(--color-gold-dark);
+  padding: 10px 16px;
+}
+
+.btn-outline-danger {
+  background: #fff;
+  border: 1px solid var(--status-overdue-bg);
+  color: var(--priority-high);
+  padding: 10px 16px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th {
+  text-align: left;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  letter-spacing: 0.03em;
+  background: var(--color-bg);
+  padding: 10px 18px;
+  text-transform: uppercase;
+}
+
+td {
+  padding: 13px 18px;
+  font-size: 13px;
+  color: var(--color-text-table);
+  border-top: 1px solid var(--color-row-divider);
+}
+
+tbody tr {
+  cursor: default;
+}
+tbody tr.clickable:hover {
+  background: var(--color-row-divider);
+  cursor: pointer;
+}

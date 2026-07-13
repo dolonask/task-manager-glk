@@ -1,0 +1,1125 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: 'Manrope', sans-serif; -webkit-font-smoothing: antialiased; }
+    ::placeholder { color: #A79B8A; }
+    a { color: #8A6A2E; }
+    a:hover { color: #C8A068; }
+    select, input, textarea, button { font-family: 'Manrope', sans-serif; }
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-thumb { background: #E8E2D6; border-radius: 4px; }
+  </style>
+</helmet>
+
+<div style="width:100vw;height:100vh;background:#FAF8F4;color:#2A241C;overflow:hidden;font-size:14px;">
+
+  <sc-if value="{{ !loggedIn }}" hint-placeholder-val="{{ true }}">
+    <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:#FAF8F4;">
+      <div style="width:420px;background:#FFFFFF;border:1px solid #E8E2D6;border-radius:6px;padding:40px 36px;">
+        <img src="glk-logo.png" alt="GLK" style="height:34px;width:auto;display:block;margin-bottom:28px;filter:brightness(0);opacity:0.88;object-fit:contain;" />
+        <div style="font-size:19px;font-weight:700;letter-spacing:-0.01em;margin-bottom:28px;">Диспетчерская задач</div>
+
+        <div style="display:flex;flex-direction:column;gap:14px;margin-bottom:22px;">
+          <div>
+            <div style="font-size:12px;font-weight:600;color:#6B6153;margin-bottom:6px;">Логин</div>
+            <div style="display:flex;align-items:stretch;border:1px solid #E8E2D6;border-radius:5px;overflow:hidden;">
+              <input placeholder="ivanov.i" style="flex:1;padding:10px 12px;border:none;font-size:14px;outline:none;" />
+              <div style="padding:10px 12px;background:#FAF8F4;color:#8A8074;font-size:14px;border-left:1px solid #E8E2D6;white-space:nowrap;">@glk.kg</div>
+            </div>
+          </div>
+          <div>
+            <div style="font-size:12px;font-weight:600;color:#6B6153;margin-bottom:6px;">Пароль</div>
+            <input type="password" placeholder="••••••••••" style="width:100%;padding:10px 12px;border:1px solid #E8E2D6;border-radius:5px;font-size:14px;" />
+          </div>
+        </div>
+
+        <div style="height:1px;background:#E8E2D6;margin:22px 0;"></div>
+
+        <div style="font-size:12px;font-weight:600;color:#6B6153;margin-bottom:6px;">Демо-пользователь (для проверки ролей в прототипе)</div>
+        <select value="{{ loginUserId }}" onChange="{{ onLoginUserChange }}" style="width:100%;padding:10px 12px;border:1px solid #E8E2D6;border-radius:5px;font-size:14px;margin-bottom:22px;background:#fff;">
+          <sc-for list="{{ demoUsers }}" as="u" hint-placeholder-count="5">
+            <option value="{{ u.id }}">{{ u.optionLabel }}</option>
+          </sc-for>
+        </select>
+
+        <button onClick="{{ onLogin }}" style="width:100%;padding:12px;background:#2A241C;color:#fff;border:none;border-radius:5px;font-size:14px;font-weight:700;cursor:pointer;">Войти</button>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ loggedIn }}" hint-placeholder-val="{{ false }}">
+    <div style="display:flex;width:100%;height:100%;">
+
+      <div style="width:240px;flex-shrink:0;background:#2A241C;color:#EFEAE0;display:flex;flex-direction:column;padding:22px 16px;">
+        <img src="glk-logo.png" alt="GLK" style="height:26px;width:auto;object-fit:contain;margin-bottom:4px;margin-left:6px;" />
+        <div style="font-size:11px;color:#B8AF9F;margin:0 0 26px 6px;letter-spacing:0.04em;">ДИСПЕТЧЕРСКАЯ ЗАДАЧ</div>
+
+        <div style="display:flex;flex-direction:column;gap:2px;">
+          <sc-for list="{{ navItems }}" as="item" hint-placeholder-count="6">
+            <div onClick="{{ item.onClick }}" style="{{ item.style }}">{{ item.label }}</div>
+          </sc-for>
+        </div>
+
+        <div style="flex:1;"></div>
+        <div style="border-top:1px solid #4A4232;padding-top:16px;margin-top:16px;">
+          <div style="font-size:13px;font-weight:700;">{{ currentUser.name }}</div>
+          <div style="font-size:12px;color:#B8AF9F;margin-top:2px;">{{ roleLabel }}</div>
+        </div>
+      </div>
+
+      <div style="flex:1;display:flex;flex-direction:column;min-width:0;height:100%;">
+
+        <div style="height:64px;flex-shrink:0;border-bottom:1px solid #E8E2D6;display:flex;align-items:center;justify-content:space-between;padding:0 28px;background:#FFFFFF;">
+          <div style="font-size:17px;font-weight:700;">{{ screenTitle }}</div>
+          <div style="display:flex;align-items:center;gap:16px;">
+            <div style="font-size:12px;color:#8A8074;">Смотреть как:</div>
+            <select value="{{ currentUserId }}" onChange="{{ onRoleSwitch }}" style="padding:8px 12px;border:1px solid #E8E2D6;border-radius:5px;font-size:13px;background:#fff;">
+              <sc-for list="{{ demoUsers }}" as="u" hint-placeholder-count="5">
+                <option value="{{ u.id }}">{{ u.optionLabel }}</option>
+              </sc-for>
+            </select>
+            <button onClick="{{ onLogout }}" style="padding:8px 14px;border:1px solid #E8E2D6;background:#fff;border-radius:5px;font-size:13px;cursor:pointer;color:#6B6153;">Выйти</button>
+          </div>
+        </div>
+
+        <div style="flex:1;overflow-y:auto;padding:28px;">
+
+          <sc-if value="{{ screenIs.dashboard }}" hint-placeholder-val="{{ false }}">
+            <div>
+              <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:28px;">
+                <sc-for list="{{ kpiCards }}" as="k" hint-placeholder-count="4">
+                  <div style="background:#fff;border:1px solid #E8E2D6;border-radius:6px;padding:18px 20px;">
+                    <div style="font-size:12px;color:#8A8074;font-weight:600;margin-bottom:8px;">{{ k.label }}</div>
+                    <div style="font-size:28px;font-weight:800;">{{ k.value }}</div>
+                  </div>
+                </sc-for>
+              </div>
+
+              <div style="display:grid;grid-template-columns:1.3fr 1fr;gap:20px;align-items:start;">
+                <div style="background:#fff;border:1px solid #E8E2D6;border-radius:6px;padding:20px;">
+                  <div style="font-size:14px;font-weight:700;margin-bottom:14px;">Ближайшие сроки</div>
+                  <sc-for list="{{ upcomingTasks }}" as="t" hint-placeholder-count="4">
+                    <div onClick="{{ t.onOpen }}" style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid #F0ECE3;cursor:pointer;">
+                      <div style="min-width:0;">
+                        <div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:320px;">{{ t.title }}</div>
+                        <div style="font-size:12px;color:#8A8074;margin-top:3px;">{{ t.deptName }} · {{ t.assigneeName }}</div>
+                      </div>
+                      <div style="display:flex;align-items:center;gap:10px;flex-shrink:0;">
+                        <div style="font-size:12px;color:#6B6153;">{{ t.deadlineLabel }}</div>
+                        <div style="{{ t.badgeStyle }}">{{ t.status }}</div>
+                      </div>
+                    </div>
+                  </sc-for>
+                  <sc-if value="{{ upcomingEmpty }}" hint-placeholder-val="{{ false }}">
+                    <div style="font-size:13px;color:#8A8074;padding:8px 0;">Нет активных задач с приближающимся сроком.</div>
+                  </sc-if>
+                </div>
+
+                <div style="background:#fff;border:1px solid #E8E2D6;border-radius:6px;padding:20px;">
+                  <div style="font-size:14px;font-weight:700;margin-bottom:14px;">Требует внимания</div>
+                  <sc-for list="{{ attentionItems }}" as="a" hint-placeholder-count="3">
+                    <div onClick="{{ a.onOpen }}" style="padding:12px 0;border-bottom:1px solid #F0ECE3;cursor:pointer;">
+                      <div style="font-size:13px;font-weight:600;">{{ a.title }}</div>
+                      <div style="font-size:12px;color:#8A8074;margin-top:3px;">{{ a.subtitle }}</div>
+                    </div>
+                  </sc-for>
+                  <sc-if value="{{ attentionEmpty }}" hint-placeholder-val="{{ true }}">
+                    <div style="font-size:13px;color:#8A8074;padding:8px 0;">Нет заявок или задач, требующих действия.</div>
+                  </sc-if>
+                </div>
+              </div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ screenIs.tasks }}" hint-placeholder-val="{{ false }}">
+            <div>
+              <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px;flex-wrap:wrap;">
+                <input value="{{ taskFilters.q }}" onChange="{{ onFilterQ }}" placeholder="Поиск по задачам..." style="flex:1;min-width:220px;padding:9px 12px;border:1px solid #E8E2D6;border-radius:5px;font-size:13px;" />
+                <select value="{{ taskFilters.status }}" onChange="{{ onFilterStatus }}" style="padding:9px 12px;border:1px solid #E8E2D6;border-radius:5px;font-size:13px;background:#fff;">
+                  <option value="all">Все статусы</option>
+                  <option value="Новая">Новая</option>
+                  <option value="В работе">В работе</option>
+                  <option value="Выполнено">Выполнено</option>
+                  <option value="Просрочено">Просрочено</option>
+                </select>
+                <select value="{{ taskFilters.dept }}" onChange="{{ onFilterDept }}" style="padding:9px 12px;border:1px solid #E8E2D6;border-radius:5px;font-size:13px;background:#fff;">
+                  <option value="all">Все СП</option>
+                  <sc-for list="{{ departments }}" as="d" hint-placeholder-count="6">
+                    <option value="{{ d.id }}">{{ d.name }}</option>
+                  </sc-for>
+                </select>
+                <select value="{{ taskFilters.priority }}" onChange="{{ onFilterPriority }}" style="padding:9px 12px;border:1px solid #E8E2D6;border-radius:5px;font-size:13px;background:#fff;">
+                  <option value="all">Все приоритеты</option>
+                  <option value="высокий">Высокий</option>
+                  <option value="средний">Средний</option>
+                  <option value="низкий">Низкий</option>
+                </select>
+                <sc-if value="{{ canCreateTask }}" hint-placeholder-val="{{ false }}">
+                  <button onClick="{{ onOpenTaskForm }}" style="padding:9px 16px;background:#2A241C;color:#fff;border:none;border-radius:5px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;">+ Новая задача</button>
+                </sc-if>
+              </div>
+
+              <sc-if value="{{ showTaskForm }}" hint-placeholder-val="{{ false }}">
+                <div style="background:#fff;border:1px solid #E8E2D6;border-radius:6px;padding:20px;margin-bottom:20px;">
+                  <div style="font-size:14px;font-weight:700;margin-bottom:14px;">Новая задача</div>
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+                    <input value="{{ newTask.title }}" onChange="{{ onNewTaskTitle }}" placeholder="Наименование задачи" style="grid-column:1/3;padding:10px 12px;border:1px solid #E8E2D6;border-radius:5px;font-size:13px;" />
+                    <textarea value="{{ newTask.description }}" onChange="{{ onNewTaskDesc }}" placeholder="Описание, ожидаемый результат" style="grid-column:1/3;padding:10px 12px;border:1px solid #E8E2D6;border-radius:5px;font-size:13px;min-height:60px;resize:vertical;"></textarea>
+                    <select value="{{ newTask.deptId }}" onChange="{{ onNewTaskDept }}" style="padding:10px 12px;border:1px solid #E8E2D6;border-radius:5px;font-size:13px;background:#fff;">
+                      <sc-for list="{{ departments }}" as="d" hint-placeholder-count="6">
+                        <option value="{{ d.id }}">{{ d.name }}</option>
+                      </sc-for>
+                    </select>
+                    <select value="{{ newTask.priority }}" onChange="{{ onNewTaskPriority }}" style="padding:10px 12px;border:1px solid #E8E2D6;border-radius:5px;font-size:13px;background:#fff;">
+                      <option value="высокий">Приоритет: высокий</option>
+                      <option value="средний">Приоритет: средний</option>
+                      <option value="низкий">Приоритет: низкий</option>
+                    </select>
+                    <input type="date" value="{{ newTask.deadline }}" onChange="{{ onNewTaskDeadline }}" style="padding:10px 12px;border:1px solid #E8E2D6;border-radius:5px;font-size:13px;" />
+                  </div>
+                  <div style="display:flex;gap:10px;justify-content:flex-end;">
+                    <button onClick="{{ onCancelTaskForm }}" style="padding:9px 16px;background:#fff;border:1px solid #E8E2D6;border-radius:5px;font-size:13px;cursor:pointer;">Отмена</button>
+                    <button onClick="{{ onSubmitTask }}" style="padding:9px 16px;background:#2A241C;color:#fff;border:none;border-radius:5px;font-size:13px;font-weight:700;cursor:pointer;">Создать задачу</button>
+                  </div>
+                </div>
+              </sc-if>
+
+              <div style="background:#fff;border:1px solid #E8E2D6;border-radius:6px;overflow:hidden;">
+                <div style="display:grid;grid-template-columns:2.2fr 1fr 1fr 0.8fr 1fr 1fr;gap:10px;padding:12px 18px;font-size:11px;font-weight:700;color:#8A8074;letter-spacing:0.03em;border-bottom:1px solid #E8E2D6;background:#FAF8F4;">
+                  <div>ЗАДАЧА</div><div>СП</div><div>ОТВЕТСТВЕННЫЙ</div><div>ПРИОРИТЕТ</div><div>СРОК</div><div>СТАТУС</div>
+                </div>
+                <sc-for list="{{ filteredTasks }}" as="t" hint-placeholder-count="6">
+                  <div onClick="{{ t.onOpen }}" style="display:grid;grid-template-columns:2.2fr 1fr 1fr 0.8fr 1fr 1fr;gap:10px;padding:14px 18px;border-bottom:1px solid #F0ECE3;cursor:pointer;align-items:center;">
+                    <div>
+                      <div style="font-size:13px;font-weight:600;">{{ t.title }}</div>
+                      <div style="height:4px;background:#F0ECE3;border-radius:2px;margin-top:8px;width:180px;overflow:hidden;">
+                        <div style="height:100%;background:#C8A068;width:{{ t.progressPct }};"></div>
+                      </div>
+                    </div>
+                    <div style="font-size:13px;color:#4A4232;">{{ t.deptName }}</div>
+                    <div style="font-size:13px;color:#4A4232;">{{ t.assigneeName }}</div>
+                    <div style="{{ t.priorityStyle }}">{{ t.priorityLabel }}</div>
+                    <div style="font-size:13px;color:#4A4232;">{{ t.deadlineLabel }}</div>
+                    <div>
+                      <div style="{{ t.badgeStyleInline }}">{{ t.status }}</div>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ screenIs.taskDetail }}" hint-placeholder-val="{{ false }}">
+            <sc-if value="{{ selectedTask }}" hint-placeholder-val="{{ false }}">
+              <div>
+                <div onClick="{{ onBackToTasks }}" style="font-size:13px;color:#8A6A2E;font-weight:700;cursor:pointer;margin-bottom:18px;">← Назад к задачам</div>
+
+                <div style="background:#fff;border:1px solid #E8E2D6;border-radius:6px;padding:24px;margin-bottom:20px;">
+                  <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:20px;">
+                    <div>
+                      <div style="font-size:19px;font-weight:700;margin-bottom:8px;">{{ selectedTask.title }}</div>
+                      <div style="font-size:13px;color:#6B6153;line-height:1.6;max-width:640px;">{{ selectedTask.description }}</div>
+                    </div>
+                    <div style="{{ selectedTask.badgeStyle }}">{{ selectedTask.status }}</div>
+                  </div>
+
+                  <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:16px;margin-top:24px;padding-top:20px;border-top:1px solid #F0ECE3;">
+                    <div><div style="font-size:11px;color:#8A8074;font-weight:700;margin-bottom:5px;">СП-ИСПОЛНИТЕЛЬ</div><div style="font-size:13px;font-weight:600;">{{ selectedTask.deptName }}</div></div>
+                    <div><div style="font-size:11px;color:#8A8074;font-weight:700;margin-bottom:5px;">ПОСТАНОВЩИК</div><div style="font-size:13px;font-weight:600;">{{ selectedTask.creatorName }}</div></div>
+                    <div><div style="font-size:11px;color:#8A8074;font-weight:700;margin-bottom:5px;">ОТВЕТСТВЕННЫЙ</div><div style="font-size:13px;font-weight:600;">{{ selectedTask.assigneeName }}</div></div>
+                    <div><div style="font-size:11px;color:#8A8074;font-weight:700;margin-bottom:5px;">ПЕРВОНАЧАЛЬНЫЙ СРОК</div><div style="font-size:13px;font-weight:600;">{{ selectedTask.initialDeadlineLabel }}</div></div>
+                    <div><div style="font-size:11px;color:#8A8074;font-weight:700;margin-bottom:5px;">ТЕКУЩИЙ СРОК</div><div style="font-size:13px;font-weight:600;">{{ selectedTask.currentDeadlineLabel }}</div></div>
+                  </div>
+                </div>
+
+                <div style="display:grid;grid-template-columns:1.2fr 1fr;gap:20px;align-items:start;">
+                  <div style="background:#fff;border:1px solid #E8E2D6;border-radius:6px;padding:20px;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+                      <div style="font-size:14px;font-weight:700;">Подзадачи</div>
+                      <div style="font-size:12px;color:#8A8074;">{{ selectedTask.progressLabel }}</div>
+                    </div>
+                    <sc-for list="{{ selectedTask.subtasks }}" as="s" hint-placeholder-count="3">
+                      <div style="display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid #F0ECE3;">
+                        <input type="checkbox" checked="{{ s.done }}" onChange="{{ s.onToggle }}" disabled="{{ s.disabled }}" style="width:17px;height:17px;accent-color:#2A241C;cursor:pointer;" />
+                        <div style="{{ s.textStyle }}">{{ s.title }}</div>
+                        <div style="font-size:12px;color:#8A8074;">{{ s.assigneeName }}</div>
+                        <div style="font-size:12px;color:#8A8074;">{{ s.deadlineLabel }}</div>
+                      </div>
+                    </sc-for>
+
+                    <sc-if value="{{ selectedTask.canRequestTransfer }}" hint-placeholder-val="{{ false }}">
+                      <div style="margin-top:18px;padding-top:18px;border-top:1px solid #F0ECE3;">
+                        <sc-if value="{{ !showTransferForm }}" hint-placeholder-val="{{ true }}">
+                          <button onClick="{{ onOpenTransferForm }}" style="padding:9px 16px;background:#fff;border:1px solid #C8A068;color:#8A6A2E;border-radius:5px;font-size:13px;font-weight:700;cursor:pointer;">Подать заявку на перенос срока</button>
+                        </sc-if>
+                        <sc-if value="{{ showTransferForm }}" hint-placeholder-val="{{ false }}">
+                          <div>
+                            <div style="font-size:13px;font-weight:700;margin-bottom:10px;">Заявка на перенос срока</div>
+                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+                              <div>
+                                <div style="font-size:12px;color:#8A8074;margin-bottom:6px;">Предлагаемый срок</div>
+                                <input type="date" value="{{ newTransfer.proposedDate }}" onChange="{{ onTransferDate }}" style="width:100%;padding:9px 12px;border:1px solid #E8E2D6;border-radius:5px;font-size:13px;" />
+                              </div>
+                            </div>
+                            <div style="font-size:12px;color:#8A8074;margin-bottom:6px;">Обоснование причин переноса</div>
+                            <textarea value="{{ newTransfer.justification }}" onChange="{{ onTransferJustification }}" placeholder="Укажите причину переноса срока" style="width:100%;padding:10px 12px;border:1px solid #E8E2D6;border-radius:5px;font-size:13px;min-height:70px;resize:vertical;margin-bottom:12px;"></textarea>
+                            <div style="display:flex;gap:10px;justify-content:flex-end;">
+                              <button onClick="{{ onCancelTransferForm }}" style="padding:9px 16px;background:#fff;border:1px solid #E8E2D6;border-radius:5px;font-size:13px;cursor:pointer;">Отмена</button>
+                              <button onClick="{{ onSubmitTransfer }}" style="padding:9px 16px;background:#2A241C;color:#fff;border:none;border-radius:5px;font-size:13px;font-weight:700;cursor:pointer;">Отправить на согласование</button>
+                            </div>
+                          </div>
+                        </sc-if>
+                      </div>
+                    </sc-if>
+                  </div>
+
+                  <div style="background:#fff;border:1px solid #E8E2D6;border-radius:6px;padding:20px;">
+                    <div style="font-size:14px;font-weight:700;margin-bottom:14px;">История и заявки на перенос срока</div>
+                    <sc-for list="{{ selectedTask.requestsHistory }}" as="r" hint-placeholder-count="2">
+                      <div style="padding:12px 0;border-bottom:1px solid #F0ECE3;">
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                          <div style="font-size:12px;font-weight:700;">{{ r.fromLabel }} → {{ r.toLabel }}</div>
+                          <div style="{{ r.badgeStyle }}">{{ r.status }}</div>
+                        </div>
+                        <div style="font-size:12px;color:#6B6153;line-height:1.5;">{{ r.justification }}</div>
+                        <div style="font-size:11px;color:#8A8074;margin-top:6px;">Инициатор: {{ r.initiatorName }} · Согласующий: {{ r.approverName }}</div>
+                        <sc-if value="{{ r.decisionReason }}" hint-placeholder-val="{{ false }}">
+                          <div style="font-size:12px;color:#9A3B2C;margin-top:4px;">Причина: {{ r.decisionReason }}</div>
+                        </sc-if>
+                      </div>
+                    </sc-for>
+                    <sc-if value="{{ selectedTask.noHistory }}" hint-placeholder-val="{{ true }}">
+                      <div style="font-size:13px;color:#8A8074;">Изменений срока не было.</div>
+                    </sc-if>
+                  </div>
+                </div>
+              </div>
+            </sc-if>
+          </sc-if>
+
+          <sc-if value="{{ screenIs.requests }}" hint-placeholder-val="{{ false }}">
+            <div>
+              <div style="display:flex;gap:10px;margin-bottom:18px;">
+                <sc-for list="{{ requestFilterTabs }}" as="ft" hint-placeholder-count="4">
+                  <div onClick="{{ ft.onClick }}" style="{{ ft.style }}">{{ ft.label }}</div>
+                </sc-for>
+              </div>
+
+              <div style="display:flex;flex-direction:column;gap:14px;">
+                <sc-for list="{{ filteredRequests }}" as="r" hint-placeholder-count="3">
+                  <div style="background:#fff;border:1px solid #E8E2D6;border-radius:6px;padding:20px;">
+                    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;">
+                      <div>
+                        <div style="font-size:14px;font-weight:700;">{{ r.taskTitle }}</div>
+                        <div style="font-size:12px;color:#8A8074;margin-top:4px;">{{ r.deptName }} · Инициатор: {{ r.initiatorName }} · Согласующий: {{ r.approverName }}</div>
+                      </div>
+                      <div style="{{ r.badgeStyle }}">{{ r.status }}</div>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:16px;font-size:13px;margin-bottom:10px;">
+                      <div>Текущий срок: <b>{{ r.fromLabel }}</b></div>
+                      <div style="color:#8A8074;">→</div>
+                      <div>Предлагаемый срок: <b style="color:#8A6A2E;">{{ r.toLabel }}</b></div>
+                    </div>
+                    <div style="font-size:13px;color:#4A4232;line-height:1.5;margin-bottom:8px;">{{ r.justification }}</div>
+                    <sc-if value="{{ r.decisionReason }}" hint-placeholder-val="{{ false }}">
+                      <div style="font-size:13px;color:#9A3B2C;margin-bottom:8px;">Причина решения: {{ r.decisionReason }}</div>
+                    </sc-if>
+
+                    <sc-if value="{{ r.canApprove }}" hint-placeholder-val="{{ false }}">
+                      <div style="display:flex;gap:8px;margin-top:12px;padding-top:14px;border-top:1px solid #F0ECE3;">
+                        <button onClick="{{ r.onApprove }}" style="padding:8px 14px;background:#2A241C;color:#fff;border:none;border-radius:5px;font-size:12px;font-weight:700;cursor:pointer;">Согласовать</button>
+                        <button onClick="{{ r.onReturn }}" style="padding:8px 14px;background:#fff;border:1px solid #E8E2D6;border-radius:5px;font-size:12px;font-weight:700;cursor:pointer;color:#6B6153;">Вернуть на доработку</button>
+                        <button onClick="{{ r.onReject }}" style="padding:8px 14px;background:#fff;border:1px solid #E8E2D6;border-radius:5px;font-size:12px;font-weight:700;cursor:pointer;color:#9A3B2C;">Отклонить</button>
+                      </div>
+                    </sc-if>
+                    <sc-if value="{{ r.canApply }}" hint-placeholder-val="{{ false }}">
+                      <div style="margin-top:12px;padding-top:14px;border-top:1px solid #F0ECE3;">
+                        <button onClick="{{ r.onApply }}" style="padding:8px 14px;background:#2A241C;color:#fff;border:none;border-radius:5px;font-size:12px;font-weight:700;cursor:pointer;">Применить новый срок к задаче</button>
+                      </div>
+                    </sc-if>
+                  </div>
+                </sc-for>
+                <sc-if value="{{ requestsEmpty }}" hint-placeholder-val="{{ false }}">
+                  <div style="font-size:13px;color:#8A8074;padding:20px;text-align:center;">Заявок в этой категории нет.</div>
+                </sc-if>
+              </div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ screenIs.analytics }}" hint-placeholder-val="{{ false }}">
+            <div>
+              <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:20px;">
+                <sc-for list="{{ analyticsKpis }}" as="k" hint-placeholder-count="4">
+                  <div style="background:#fff;border:1px solid #E8E2D6;border-radius:6px;padding:18px 20px;">
+                    <div style="font-size:12px;color:#8A8074;font-weight:600;margin-bottom:8px;">{{ k.label }}</div>
+                    <div style="font-size:26px;font-weight:800;">{{ k.value }}</div>
+                  </div>
+                </sc-for>
+              </div>
+
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;">
+                <div style="background:#fff;border:1px solid #E8E2D6;border-radius:6px;padding:20px;">
+                  <div style="font-size:14px;font-weight:700;margin-bottom:16px;">Нагрузка по структурным подразделениям</div>
+                  <sc-for list="{{ deptStats }}" as="d" hint-placeholder-count="6">
+                    <div style="margin-bottom:14px;">
+                      <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px;">
+                        <div style="font-weight:600;">{{ d.name }}</div>
+                        <div style="color:#8A8074;">{{ d.doneCount }}/{{ d.total }} · просрочено {{ d.overdueCount }}</div>
+                      </div>
+                      <div style="height:8px;background:#F0ECE3;border-radius:4px;overflow:hidden;">
+                        <div style="height:100%;background:#C8A068;width:{{ d.pct }};"></div>
+                      </div>
+                    </div>
+                  </sc-for>
+                </div>
+
+                <div style="background:#fff;border:1px solid #E8E2D6;border-radius:6px;padding:20px;">
+                  <div style="font-size:14px;font-weight:700;margin-bottom:16px;">Задачи по членам Правления</div>
+                  <sc-for list="{{ boardStats }}" as="b" hint-placeholder-count="3">
+                    <div style="display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid #F0ECE3;">
+                      <div style="font-size:13px;font-weight:600;">{{ b.name }}</div>
+                      <div style="font-size:12px;color:#6B6153;">поставлено {{ b.count }} · выполнено {{ b.done }} · просрочено {{ b.overdue }}</div>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+
+              <div style="display:grid;grid-template-columns:1.4fr 1fr;gap:20px;">
+                <div style="background:#fff;border:1px solid #E8E2D6;border-radius:6px;padding:20px;">
+                  <div style="font-size:14px;font-weight:700;margin-bottom:14px;">Реестр ближайших сроков и просрочек</div>
+                  <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:10px;padding:8px 0;font-size:11px;font-weight:700;color:#8A8074;border-bottom:1px solid #E8E2D6;">
+                    <div>ЗАДАЧА</div><div>СП</div><div>СРОК</div><div>СТАТУС</div>
+                  </div>
+                  <sc-for list="{{ registryRows }}" as="row" hint-placeholder-count="5">
+                    <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:10px;padding:11px 0;border-bottom:1px solid #F0ECE3;align-items:center;">
+                      <div style="font-size:13px;font-weight:600;">{{ row.title }}</div>
+                      <div style="font-size:12px;color:#4A4232;">{{ row.deptName }}</div>
+                      <div style="font-size:12px;color:#4A4232;">{{ row.deadlineLabel }}</div>
+                      <div style="{{ row.badgeStyle }}">{{ row.status }}</div>
+                    </div>
+                  </sc-for>
+                </div>
+
+                <div style="background:#fff;border:1px solid #E8E2D6;border-radius:6px;padding:20px;">
+                  <div style="font-size:14px;font-weight:700;margin-bottom:14px;">Заявки на перенос срока</div>
+                  <div style="display:flex;flex-direction:column;gap:12px;font-size:13px;">
+                    <div style="display:flex;justify-content:space-between;"><span style="color:#6B6153;">Всего заявок</span><b>{{ requestsAnalytics.total }}</b></div>
+                    <div style="display:flex;justify-content:space-between;"><span style="color:#6B6153;">Согласовано</span><b>{{ requestsAnalytics.approvedPct }}</b></div>
+                    <div style="display:flex;justify-content:space-between;"><span style="color:#6B6153;">Отклонено</span><b>{{ requestsAnalytics.rejectedPct }}</b></div>
+                    <div style="display:flex;justify-content:space-between;"><span style="color:#6B6153;">Средний перенос</span><b>{{ requestsAnalytics.avgDays }}</b></div>
+                  </div>
+                  <div style="height:1px;background:#E8E2D6;margin:18px 0;"></div>
+                  <div style="display:flex;gap:8px;">
+                    <button title="Экспорт доступен после серверной реализации" style="flex:1;padding:9px;background:#FAF8F4;border:1px solid #E8E2D6;border-radius:5px;font-size:12px;font-weight:700;color:#A79B8A;cursor:not-allowed;">Экспорт XLSX</button>
+                    <button title="Экспорт доступен после серверной реализации" style="flex:1;padding:9px;background:#FAF8F4;border:1px solid #E8E2D6;border-radius:5px;font-size:12px;font-weight:700;color:#A79B8A;cursor:not-allowed;">Экспорт PDF</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ screenIs.admin }}" hint-placeholder-val="{{ false }}">
+            <div>
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+                <div style="font-size:14px;font-weight:700;">Пользователи</div>
+                <sc-if value="{{ !showUserForm }}" hint-placeholder-val="{{ true }}">
+                  <button onClick="{{ onOpenUserForm }}" style="padding:8px 14px;background:#2A241C;color:#fff;border:none;border-radius:5px;font-size:12px;font-weight:700;cursor:pointer;">+ Добавить пользователя</button>
+                </sc-if>
+              </div>
+
+              <sc-if value="{{ showUserForm }}" hint-placeholder-val="{{ false }}">
+                <div style="background:#fff;border:1px solid #E8E2D6;border-radius:6px;padding:20px;margin-bottom:16px;">
+                  <div style="display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:12px;margin-bottom:12px;">
+                    <input value="{{ newUser.name }}" onChange="{{ onNewUserName }}" placeholder="ФИО" style="padding:9px 12px;border:1px solid #E8E2D6;border-radius:5px;font-size:13px;" />
+                    <select value="{{ newUser.role }}" onChange="{{ onNewUserRole }}" style="padding:9px 12px;border:1px solid #E8E2D6;border-radius:5px;font-size:13px;background:#fff;">
+                      <option value="head">Начальник СП</option>
+                      <option value="employee">Сотрудник СП</option>
+                      <option value="observer">Наблюдатель</option>
+                    </select>
+                    <select value="{{ newUser.deptId }}" onChange="{{ onNewUserDept }}" style="padding:9px 12px;border:1px solid #E8E2D6;border-radius:5px;font-size:13px;background:#fff;">
+                      <sc-for list="{{ departments }}" as="d" hint-placeholder-count="6">
+                        <option value="{{ d.id }}">{{ d.name }}</option>
+                      </sc-for>
+                    </select>
+                  </div>
+                  <div style="display:flex;gap:10px;justify-content:flex-end;">
+                    <button onClick="{{ onCancelUserForm }}" style="padding:8px 14px;background:#fff;border:1px solid #E8E2D6;border-radius:5px;font-size:12px;cursor:pointer;">Отмена</button>
+                    <button onClick="{{ onSubmitUser }}" style="padding:8px 14px;background:#2A241C;color:#fff;border:none;border-radius:5px;font-size:12px;font-weight:700;cursor:pointer;">Сохранить</button>
+                  </div>
+                </div>
+              </sc-if>
+
+              <div style="background:#fff;border:1px solid #E8E2D6;border-radius:6px;overflow:hidden;margin-bottom:28px;">
+                <div style="display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:10px;padding:11px 18px;font-size:11px;font-weight:700;color:#8A8074;border-bottom:1px solid #E8E2D6;background:#FAF8F4;">
+                  <div>ФИО</div><div>РОЛЬ</div><div>СП</div>
+                </div>
+                <sc-for list="{{ userRows }}" as="u" hint-placeholder-count="8">
+                  <div style="display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:10px;padding:13px 18px;border-bottom:1px solid #F0ECE3;font-size:13px;align-items:center;">
+                    <div style="font-weight:600;">{{ u.name }}</div>
+                    <div style="color:#4A4232;">{{ u.roleLabel }}</div>
+                    <div style="color:#4A4232;">{{ u.deptName }}</div>
+                  </div>
+                </sc-for>
+              </div>
+
+              <div style="font-size:14px;font-weight:700;margin-bottom:14px;">Структурные подразделения</div>
+              <div style="background:#fff;border:1px solid #E8E2D6;border-radius:6px;overflow:hidden;">
+                <div style="display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:10px;padding:11px 18px;font-size:11px;font-weight:700;color:#8A8074;border-bottom:1px solid #E8E2D6;background:#FAF8F4;">
+                  <div>СП</div><div>КУРИРУЮЩИЙ ЧЛЕН ПРАВЛЕНИЯ</div><div>НАЧАЛЬНИК СП</div>
+                </div>
+                <sc-for list="{{ departments }}" as="d" hint-placeholder-count="6">
+                  <div style="display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:10px;padding:13px 18px;border-bottom:1px solid #F0ECE3;font-size:13px;align-items:center;">
+                    <div style="font-weight:600;">{{ d.name }}</div>
+                    <div style="color:#4A4232;">{{ d.curatorName }}</div>
+                    <div style="color:#4A4232;">{{ d.headName }}</div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ screenIs.audit }}" hint-placeholder-val="{{ false }}">
+            <div style="background:#fff;border:1px solid #E8E2D6;border-radius:6px;overflow:hidden;">
+              <div style="display:grid;grid-template-columns:1fr 1.2fr 2fr 1.4fr;gap:10px;padding:11px 18px;font-size:11px;font-weight:700;color:#8A8074;border-bottom:1px solid #E8E2D6;background:#FAF8F4;">
+                <div>ДАТА/ВРЕМЯ</div><div>ПОЛЬЗОВАТЕЛЬ</div><div>ДЕЙСТВИЕ</div><div>ОБЪЕКТ</div>
+              </div>
+              <sc-for list="{{ auditRows }}" as="a" hint-placeholder-count="9">
+                <div style="display:grid;grid-template-columns:1fr 1.2fr 2fr 1.4fr;gap:10px;padding:13px 18px;border-bottom:1px solid #F0ECE3;font-size:13px;align-items:center;">
+                  <div style="color:#8A8074;">{{ a.tsLabel }}</div>
+                  <div style="font-weight:600;">{{ a.actorName }}</div>
+                  <div style="color:#4A4232;">{{ a.action }}</div>
+                  <div style="color:#4A4232;">{{ a.target }}</div>
+                </div>
+              </sc-for>
+            </div>
+          </sc-if>
+
+        </div>
+      </div>
+    </div>
+  </sc-if>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const TODAY = '2026-07-13';
+
+const ROLE_LABELS = {
+  admin: 'Администратор',
+  board: 'Член Правления',
+  head: 'Начальник СП',
+  employee: 'Сотрудник СП',
+  observer: 'Наблюдатель'
+};
+
+function fmtDate(iso) {
+  if (!iso) return '—';
+  const [y, m, d] = iso.split('-');
+  return d + '.' + m + '.' + y;
+}
+
+function statusMeta(status) {
+  switch (status) {
+    case 'Новая': return { bg: '#EDE8DE', color: '#6B6153' };
+    case 'В работе': return { bg: '#F3E6C9', color: '#8A6A2E' };
+    case 'Выполнено': return { bg: '#2A241C', color: '#FFFFFF' };
+    case 'Просрочено': return { bg: '#F4DAD3', color: '#9A3B2C' };
+    default: return { bg: '#EDE8DE', color: '#6B6153' };
+  }
+}
+
+function reqStatusMeta(status) {
+  switch (status) {
+    case 'На согласовании': return { bg: '#F3E6C9', color: '#8A6A2E' };
+    case 'Согласована': return { bg: '#EDE8DE', color: '#4A4232' };
+    case 'Исполнена': return { bg: '#2A241C', color: '#FFFFFF' };
+    case 'Отклонена': return { bg: '#F4DAD3', color: '#9A3B2C' };
+    case 'На доработке': return { bg: '#F4DAD3', color: '#9A3B2C' };
+    default: return { bg: '#EDE8DE', color: '#6B6153' };
+  }
+}
+
+function priorityMeta(p) {
+  switch (p) {
+    case 'высокий': return { label: 'Высокий', color: '#9A3B2C' };
+    case 'средний': return { label: 'Средний', color: '#8A6A2E' };
+    default: return { label: 'Низкий', color: '#6B6153' };
+  }
+}
+
+function computeStatus(task) {
+  const allDone = task.subtasks.length > 0 && task.subtasks.every(s => s.done);
+  if (allDone) return 'Выполнено';
+  if (task.currentDeadline < TODAY) return 'Просрочено';
+  const anyProgress = task.subtasks.some(s => s.done);
+  if (anyProgress) return 'В работе';
+  return 'Новая';
+}
+
+function initialData() {
+  const users = [
+    { id: 'u1', name: 'Айгуль Молдалиева', role: 'admin', deptId: null },
+    { id: 'u2', name: 'Нурлан Осмонов', role: 'board', deptId: null },
+    { id: 'u3', name: 'Гульнара Токтосунова', role: 'board', deptId: null },
+    { id: 'u4', name: 'Бакыт Жумабеков', role: 'board', deptId: null },
+    { id: 'u5', name: 'Эркин Сыдыков', role: 'head', deptId: 'd1' },
+    { id: 'u6', name: 'Жаныл Асанова', role: 'head', deptId: 'd2' },
+    { id: 'u7', name: 'Марат Дуйшеев', role: 'head', deptId: 'd3' },
+    { id: 'u8', name: 'Салтанат Кубатова', role: 'head', deptId: 'd4' },
+    { id: 'u9', name: 'Тимур Бекбоев', role: 'head', deptId: 'd5' },
+    { id: 'u10', name: 'Айнура Жумалиева', role: 'head', deptId: 'd6' },
+    { id: 'u11', name: 'Азамат Токтогулов', role: 'employee', deptId: 'd5' },
+    { id: 'u12', name: 'Чынгыз Абдыраев', role: 'observer', deptId: null }
+  ];
+
+  const departments = [
+    { id: 'd1', name: 'Юридический отдел', curatorId: 'u2', headId: 'u5' },
+    { id: 'd2', name: 'Финансовая администрация', curatorId: 'u2', headId: 'u6' },
+    { id: 'd3', name: 'Отдел международных отношений', curatorId: 'u3', headId: 'u7' },
+    { id: 'd4', name: 'Бухгалтерия', curatorId: 'u3', headId: 'u8' },
+    { id: 'd5', name: 'ИТ и безопасность', curatorId: 'u4', headId: 'u9' },
+    { id: 'd6', name: 'Маркетинг', curatorId: 'u4', headId: 'u10' }
+  ];
+
+  const tasks = [
+    {
+      id: 't1', title: 'Актуализация договоров лизинга с ключевыми клиентами',
+      description: 'Провести сверку действующих договоров, согласовать новые условия с ключевыми контрагентами и подписать необходимые дополнительные соглашения.',
+      deptId: 'd1', creatorId: 'u2', assigneeId: 'u5', priority: 'высокий',
+      initialDeadline: '2026-06-20', currentDeadline: '2026-07-25',
+      subtasks: [
+        { id: 's1', title: 'Сверка реестра действующих договоров', assigneeId: 'u5', deadline: '2026-06-25', done: true },
+        { id: 's2', title: 'Согласование новых условий с контрагентами', assigneeId: 'u5', deadline: '2026-07-10', done: true },
+        { id: 's3', title: 'Подписание дополнительных соглашений', assigneeId: 'u5', deadline: '2026-07-25', done: false }
+      ]
+    },
+    {
+      id: 't2', title: 'Подготовка квартального финансового отчёта',
+      description: 'Сформировать и согласовать с Правлением сводный финансовый отчёт за 2 квартал 2026 года.',
+      deptId: 'd2', creatorId: 'u2', assigneeId: 'u6', priority: 'высокий',
+      initialDeadline: '2026-07-05', currentDeadline: '2026-07-05',
+      subtasks: [
+        { id: 's1', title: 'Сбор данных от подразделений', assigneeId: 'u6', deadline: '2026-06-28', done: true },
+        { id: 's2', title: 'Формирование отчёта', assigneeId: 'u6', deadline: '2026-07-02', done: true },
+        { id: 's3', title: 'Согласование с Правлением', assigneeId: 'u6', deadline: '2026-07-05', done: false }
+      ]
+    },
+    {
+      id: 't3', title: 'Разработка плана международного сотрудничества на 2027 год',
+      description: 'Проанализировать текущие партнёрства и подготовить предложения по развитию международного сотрудничества.',
+      deptId: 'd3', creatorId: 'u3', assigneeId: 'u7', priority: 'средний',
+      initialDeadline: '2026-08-01', currentDeadline: '2026-08-01',
+      subtasks: [
+        { id: 's1', title: 'Анализ текущих партнёрств', assigneeId: 'u7', deadline: '2026-07-20', done: false },
+        { id: 's2', title: 'Формирование предложений', assigneeId: 'u7', deadline: '2026-08-01', done: false }
+      ]
+    },
+    {
+      id: 't4', title: 'Сверка бухгалтерской отчётности за 1 полугодие',
+      description: 'Выполнить сверку бухгалтерской отчётности и устранить расхождения по итогам 1 полугодия 2026 года.',
+      deptId: 'd4', creatorId: 'u3', assigneeId: 'u8', priority: 'высокий',
+      initialDeadline: '2026-07-15', currentDeadline: '2026-07-15',
+      subtasks: [
+        { id: 's1', title: 'Сверка первичных документов', assigneeId: 'u8', deadline: '2026-07-13', done: true },
+        { id: 's2', title: 'Формирование итогового акта сверки', assigneeId: 'u8', deadline: '2026-07-15', done: false }
+      ]
+    },
+    {
+      id: 't5', title: 'Модернизация серверной инфраструктуры',
+      description: 'Провести закупку и настройку нового серверного оборудования, выполнить миграцию данных.',
+      deptId: 'd5', creatorId: 'u4', assigneeId: 'u9', priority: 'средний',
+      initialDeadline: '2026-07-30', currentDeadline: '2026-07-30',
+      subtasks: [
+        { id: 's1', title: 'Закупка оборудования', assigneeId: 'u9', deadline: '2026-07-15', done: true },
+        { id: 's2', title: 'Настройка серверов', assigneeId: 'u9', deadline: '2026-07-25', done: false },
+        { id: 's3', title: 'Миграция данных', assigneeId: 'u9', deadline: '2026-07-30', done: false }
+      ]
+    },
+    {
+      id: 't6', title: 'Запуск рекламной кампании нового лизингового продукта',
+      description: 'Подготовить и запустить рекламную кампанию нового лизингового продукта для корпоративных клиентов.',
+      deptId: 'd6', creatorId: 'u4', assigneeId: 'u10', priority: 'высокий',
+      initialDeadline: '2026-07-10', currentDeadline: '2026-07-10',
+      subtasks: [
+        { id: 's1', title: 'Разработка креативных материалов', assigneeId: 'u10', deadline: '2026-07-05', done: true },
+        { id: 's2', title: 'Запуск кампании в каналах продвижения', assigneeId: 'u10', deadline: '2026-07-10', done: false }
+      ]
+    },
+    {
+      id: 't7', title: 'Аудит информационной безопасности',
+      description: 'Провести аудит информационной безопасности систем компании с привлечением внешних экспертов.',
+      deptId: 'd5', creatorId: 'u2', assigneeId: 'u9', priority: 'высокий',
+      initialDeadline: '2026-09-01', currentDeadline: '2026-09-01',
+      subtasks: [
+        { id: 's1', title: 'Формирование технического задания на аудит', assigneeId: 'u9', deadline: '2026-07-25', done: false }
+      ]
+    }
+  ];
+
+  const taskHistory = {
+    t1: [
+      { id: 'r1', fromDate: '2026-06-20', toDate: '2026-07-25', justification: 'Требуется дополнительное время для согласования новых условий с ключевыми контрагентами.', initiatorId: 'u5', approverId: 'u2', status: 'Исполнена', decisionReason: null, appliedById: 'u1' }
+    ]
+  };
+
+  const requests = [
+    { id: 'r1', taskId: 't1', initiatorId: 'u5', approverId: 'u2', fromDate: '2026-06-20', toDate: '2026-07-25', justification: 'Требуется дополнительное время для согласования новых условий с ключевыми контрагентами.', status: 'Исполнена', decisionReason: null, submittedAt: '2026-06-21', decidedAt: '2026-06-22', appliedById: 'u1' },
+    { id: 'r2', taskId: 't5', initiatorId: 'u9', approverId: 'u4', fromDate: '2026-07-30', toDate: '2026-08-15', justification: 'Задержка поставки серверного оборудования от поставщика, подтверждено официальным письмом.', status: 'На согласовании', decisionReason: null, submittedAt: '2026-07-11', decidedAt: null, appliedById: null },
+    { id: 'r3', taskId: 't6', initiatorId: 'u10', approverId: 'u4', fromDate: '2026-07-10', toDate: '2026-07-20', justification: 'Необходимо дополнительное согласование креативных материалов с юридическим отделом.', status: 'Отклонена', decisionReason: 'Кампания приурочена к сезонному спросу, перенос срока недопустим.', submittedAt: '2026-07-08', decidedAt: '2026-07-09', appliedById: null }
+  ];
+
+  const auditLog = [
+    { id: 'a1', ts: '2026-06-20T10:15', actorId: 'u2', action: 'Создана задача', target: 'Актуализация договоров лизинга' },
+    { id: 'a2', ts: '2026-06-21T09:02', actorId: 'u5', action: 'Подана заявка на перенос срока', target: 'Заявка по задаче т1' },
+    { id: 'a3', ts: '2026-06-22T14:30', actorId: 'u2', action: 'Согласована заявка на перенос срока', target: 'Заявка по задаче т1' },
+    { id: 'a4', ts: '2026-06-22T15:10', actorId: 'u1', action: 'Применён новый срок по задаче', target: 'Актуализация договоров лизинга' },
+    { id: 'a5', ts: '2026-07-08T11:40', actorId: 'u10', action: 'Подана заявка на перенос срока', target: 'Заявка по задаче т6' },
+    { id: 'a6', ts: '2026-07-09T09:20', actorId: 'u4', action: 'Отклонена заявка на перенос срока', target: 'Заявка по задаче т6' },
+    { id: 'a7', ts: '2026-07-11T16:05', actorId: 'u9', action: 'Подана заявка на перенос срока', target: 'Заявка по задаче т5' },
+    { id: 'a8', ts: '2026-07-12T08:50', actorId: 'u5', action: 'Отмечена подзадача выполненной', target: 'Согласование новых условий' },
+    { id: 'a9', ts: '2026-07-13T09:00', actorId: 'u8', action: 'Отмечена подзадача выполненной', target: 'Сверка первичных документов' }
+  ];
+
+  return { users, departments, tasks, requests, auditLog, taskHistory };
+}
+
+class Component extends DCLogic {
+  state = (() => {
+    const data = initialData();
+    return {
+      loggedIn: false,
+      loginUserId: 'u1',
+      currentUserId: 'u1',
+      screen: 'dashboard',
+      selectedTaskId: null,
+      showTaskForm: false,
+      showTransferForm: false,
+      showUserForm: false,
+      requestFilter: 'all',
+      taskFilters: { status: 'all', dept: 'all', priority: 'all', q: '' },
+      newTask: { title: '', description: '', deptId: data.departments[0].id, priority: 'высокий', deadline: '2026-08-01' },
+      newTransfer: { proposedDate: '', justification: '' },
+      newUser: { name: '', role: 'head', deptId: data.departments[0].id },
+      nextTaskId: 8,
+      nextReqId: 4,
+      nextAuditId: 10,
+      ...data
+    };
+  })();
+
+  userById(id) { return this.state.users.find(u => u.id === id); }
+  deptById(id) { return this.state.departments.find(d => d.id === id); }
+  taskById(id) { return this.state.tasks.find(t => t.id === id); }
+
+  userName(id) { const u = this.userById(id); return u ? u.name : '—'; }
+  deptName(id) { const d = this.deptById(id); return d ? d.name : '—'; }
+
+  addAudit(actorId, action, target) {
+    this.setState(s => ({
+      auditLog: [...s.auditLog, { id: 'a' + s.nextAuditId, ts: TODAY + 'T' + new Date().toTimeString().slice(0, 5), actorId, action, target }],
+      nextAuditId: s.nextAuditId + 1
+    }));
+  }
+
+  onLoginUserChange = (e) => this.setState({ loginUserId: e.target.value });
+  onLogin = () => this.setState({ loggedIn: true, currentUserId: this.state.loginUserId, screen: 'dashboard' });
+  onLogout = () => this.setState({ loggedIn: false });
+  onRoleSwitch = (e) => this.setState({ currentUserId: e.target.value, screen: 'dashboard', selectedTaskId: null });
+
+  goScreen = (screen) => this.setState({ screen, selectedTaskId: null, showTaskForm: false });
+  onBackToTasks = () => this.setState({ screen: 'tasks', selectedTaskId: null, showTransferForm: false });
+  openTask = (id) => this.setState({ screen: 'task-detail', selectedTaskId: id, showTransferForm: false });
+
+  onFilterQ = (e) => this.setState(s => ({ taskFilters: { ...s.taskFilters, q: e.target.value } }));
+  onFilterStatus = (e) => this.setState(s => ({ taskFilters: { ...s.taskFilters, status: e.target.value } }));
+  onFilterDept = (e) => this.setState(s => ({ taskFilters: { ...s.taskFilters, dept: e.target.value } }));
+  onFilterPriority = (e) => this.setState(s => ({ taskFilters: { ...s.taskFilters, priority: e.target.value } }));
+
+  onOpenTaskForm = () => this.setState({ showTaskForm: true });
+  onCancelTaskForm = () => this.setState({ showTaskForm: false });
+  onNewTaskTitle = (e) => this.setState(s => ({ newTask: { ...s.newTask, title: e.target.value } }));
+  onNewTaskDesc = (e) => this.setState(s => ({ newTask: { ...s.newTask, description: e.target.value } }));
+  onNewTaskDept = (e) => this.setState(s => ({ newTask: { ...s.newTask, deptId: e.target.value } }));
+  onNewTaskPriority = (e) => this.setState(s => ({ newTask: { ...s.newTask, priority: e.target.value } }));
+  onNewTaskDeadline = (e) => this.setState(s => ({ newTask: { ...s.newTask, deadline: e.target.value } }));
+
+  onSubmitTask = () => {
+    const s = this.state;
+    if (!s.newTask.title.trim()) return;
+    const dept = this.deptById(s.newTask.deptId);
+    const newTask = {
+      id: 't' + s.nextTaskId,
+      title: s.newTask.title,
+      description: s.newTask.description || 'Описание не указано.',
+      deptId: s.newTask.deptId,
+      creatorId: s.currentUserId,
+      assigneeId: dept.headId,
+      priority: s.newTask.priority,
+      initialDeadline: s.newTask.deadline,
+      currentDeadline: s.newTask.deadline,
+      subtasks: []
+    };
+    this.setState(st => ({
+      tasks: [...st.tasks, newTask],
+      nextTaskId: st.nextTaskId + 1,
+      showTaskForm: false,
+      newTask: { title: '', description: '', deptId: st.departments[0].id, priority: 'высокий', deadline: '2026-08-01' }
+    }));
+    this.addAudit(s.currentUserId, 'Создана задача', newTask.title);
+  };
+
+  toggleSubtask = (taskId, subtaskId) => () => {
+    this.setState(s => ({
+      tasks: s.tasks.map(t => t.id !== taskId ? t : {
+        ...t,
+        subtasks: t.subtasks.map(st => st.id !== subtaskId ? st : { ...st, done: !st.done })
+      })
+    }));
+    const t = this.taskById(taskId);
+    const st = t.subtasks.find(x => x.id === subtaskId);
+    this.addAudit(this.state.currentUserId, st.done ? 'Снята отметка выполнения подзадачи' : 'Отмечена подзадача выполненной', st.title);
+  };
+
+  onOpenTransferForm = () => this.setState({ showTransferForm: true, newTransfer: { proposedDate: '', justification: '' } });
+  onCancelTransferForm = () => this.setState({ showTransferForm: false });
+  onTransferDate = (e) => this.setState(s => ({ newTransfer: { ...s.newTransfer, proposedDate: e.target.value } }));
+  onTransferJustification = (e) => this.setState(s => ({ newTransfer: { ...s.newTransfer, justification: e.target.value } }));
+
+  onSubmitTransfer = () => {
+    const s = this.state;
+    const task = this.taskById(s.selectedTaskId);
+    if (!s.newTransfer.proposedDate || !s.newTransfer.justification.trim()) return;
+    const dept = this.deptById(task.deptId);
+    const newReq = {
+      id: 'r' + s.nextReqId, taskId: task.id, initiatorId: s.currentUserId, approverId: dept.curatorId,
+      fromDate: task.currentDeadline, toDate: s.newTransfer.proposedDate, justification: s.newTransfer.justification,
+      status: 'На согласовании', decisionReason: null, submittedAt: TODAY, decidedAt: null, appliedById: null
+    };
+    this.setState(st => ({
+      requests: [...st.requests, newReq],
+      nextReqId: st.nextReqId + 1,
+      showTransferForm: false
+    }));
+    this.addAudit(s.currentUserId, 'Подана заявка на перенос срока', task.title);
+  };
+
+  decideRequest = (reqId, status, reason) => () => {
+    this.setState(s => ({
+      requests: s.requests.map(r => r.id !== reqId ? r : { ...r, status, decisionReason: reason, decidedAt: TODAY })
+    }));
+    const req = this.state.requests.find(r => r.id === reqId);
+    const task = this.taskById(req.taskId);
+    const actionLabel = status === 'Согласована' ? 'Согласована заявка на перенос срока' : status === 'Отклонена' ? 'Отклонена заявка на перенос срока' : 'Заявка возвращена на доработку';
+    this.addAudit(this.state.currentUserId, actionLabel, task.title);
+  };
+
+  applyRequest = (reqId) => () => {
+    const req = this.state.requests.find(r => r.id === reqId);
+    this.setState(s => ({
+      requests: s.requests.map(r => r.id !== reqId ? r : { ...r, status: 'Исполнена', appliedById: s.currentUserId }),
+      tasks: s.tasks.map(t => t.id !== req.taskId ? t : { ...t, currentDeadline: req.toDate })
+    }));
+    const task = this.taskById(req.taskId);
+    this.addAudit(this.state.currentUserId, 'Применён новый срок по задаче', task.title);
+  };
+
+  setRequestFilter = (f) => () => this.setState({ requestFilter: f });
+
+  onOpenUserForm = () => this.setState({ showUserForm: true });
+  onCancelUserForm = () => this.setState({ showUserForm: false });
+  onNewUserName = (e) => this.setState(s => ({ newUser: { ...s.newUser, name: e.target.value } }));
+  onNewUserRole = (e) => this.setState(s => ({ newUser: { ...s.newUser, role: e.target.value } }));
+  onNewUserDept = (e) => this.setState(s => ({ newUser: { ...s.newUser, deptId: e.target.value } }));
+  onSubmitUser = () => {
+    const s = this.state;
+    if (!s.newUser.name.trim()) return;
+    const newU = { id: 'u' + (s.users.length + 1) + '_' + Date.now(), name: s.newUser.name, role: s.newUser.role, deptId: s.newUser.deptId };
+    this.setState(st => ({ users: [...st.users, newU], showUserForm: false, newUser: { name: '', role: 'head', deptId: st.departments[0].id } }));
+    this.addAudit(s.currentUserId, 'Добавлен пользователь', newU.name);
+  };
+
+  renderVals() {
+    const s = this.state;
+    const currentUser = this.userById(s.currentUserId) || s.users[0];
+    const role = currentUser.role;
+
+    const demoUsers = [
+      s.users.find(u => u.id === 'u1'),
+      s.users.find(u => u.id === 'u2'),
+      s.users.find(u => u.id === 'u5'),
+      s.users.find(u => u.id === 'u11'),
+      s.users.find(u => u.id === 'u12')
+    ].map(u => ({ id: u.id, optionLabel: u.name + ' — ' + ROLE_LABELS[u.role] }));
+
+    const navDefs = [
+      { key: 'dashboard', label: 'Дашборд' },
+      { key: 'tasks', label: 'Задачи' },
+      { key: 'requests', label: 'Заявки на перенос срока' },
+      { key: 'analytics', label: 'Аналитика' },
+      { key: 'admin', label: 'Пользователи и СП', roles: ['admin'] },
+      { key: 'audit', label: 'Журнал аудита', roles: ['admin', 'board'] }
+    ];
+    const activeScreen = s.screen === 'task-detail' ? 'tasks' : s.screen;
+    const navItems = navDefs.filter(n => !n.roles || n.roles.includes(role)).map(n => ({
+      key: n.key, label: n.label,
+      onClick: () => this.goScreen(n.key),
+      style: 'padding:10px 12px;border-radius:5px;font-size:13px;font-weight:600;cursor:pointer;' +
+        (activeScreen === n.key ? 'background:#3D3527;color:#fff;' : 'color:#C9C0B1;')
+    }));
+
+    const titles = { dashboard: 'Дашборд', tasks: 'Задачи', 'task-detail': 'Карточка задачи', requests: 'Заявки на перенос срока', analytics: 'Аналитика', admin: 'Пользователи и СП', audit: 'Журнал аудита' };
+
+    const enrichedTasks = s.tasks.map(t => {
+      const status = computeStatus(t);
+      const meta = statusMeta(status);
+      const pr = priorityMeta(t.priority);
+      const doneCount = t.subtasks.filter(x => x.done).length;
+      const total = t.subtasks.length;
+      const pct = total > 0 ? Math.round((doneCount / total) * 100) : (status === 'Выполнено' ? 100 : 0);
+      return {
+        raw: t, status,
+        badgeStyle: 'font-size:11px;font-weight:700;padding:4px 9px;border-radius:20px;background:' + meta.bg + ';color:' + meta.color + ';',
+        badgeStyleInline: 'display:inline-block;font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;background:' + meta.bg + ';color:' + meta.color + ';',
+        title: t.title, deptName: this.deptName(t.deptId), assigneeName: this.userName(t.assigneeId),
+        creatorName: this.userName(t.creatorId),
+        priorityLabel: pr.label,
+        priorityStyle: 'font-size:12px;font-weight:700;color:' + pr.color + ';',
+        deadlineLabel: fmtDate(t.currentDeadline), progressPct: pct + '%',
+        onOpen: () => this.openTask(t.id)
+      };
+    });
+
+    let filteredTasks = enrichedTasks;
+    if (s.taskFilters.status !== 'all') filteredTasks = filteredTasks.filter(t => t.status === s.taskFilters.status);
+    if (s.taskFilters.dept !== 'all') filteredTasks = filteredTasks.filter(t => t.raw.deptId === s.taskFilters.dept);
+    if (s.taskFilters.priority !== 'all') filteredTasks = filteredTasks.filter(t => t.raw.priority === s.taskFilters.priority);
+    if (s.taskFilters.q.trim()) {
+      const q = s.taskFilters.q.trim().toLowerCase();
+      filteredTasks = filteredTasks.filter(t => t.title.toLowerCase().includes(q));
+    }
+
+    const kpiTotal = s.tasks.length;
+    const kpiDone = enrichedTasks.filter(t => t.status === 'Выполнено').length;
+    const kpiProgress = enrichedTasks.filter(t => t.status === 'В работе').length;
+    const kpiOverdue = enrichedTasks.filter(t => t.status === 'Просрочено').length;
+
+    const kpiCards = [
+      { label: 'Всего задач', value: kpiTotal },
+      { label: 'Выполнено', value: kpiDone },
+      { label: 'В работе', value: kpiProgress },
+      { label: 'Просрочено', value: kpiOverdue }
+    ];
+
+    const upcoming = enrichedTasks.filter(t => t.status !== 'Выполнено').slice().sort((a, b) => a.raw.currentDeadline.localeCompare(b.raw.currentDeadline)).slice(0, 5);
+
+    const pendingForRole = s.requests.filter(r => {
+      if (r.status === 'На согласовании' && role === 'board') return true;
+      if (r.status === 'Согласована' && role === 'admin') return true;
+      return false;
+    });
+    const attentionItems = pendingForRole.map(r => {
+      const task = this.taskById(r.taskId);
+      return {
+        title: task.title,
+        subtitle: r.status === 'На согласовании' ? 'Ожидает согласования переноса срока' : 'Согласована — ожидает применения нового срока',
+        onOpen: () => this.setState({ screen: 'requests' })
+      };
+    });
+
+    const canCreateTask = role === 'admin' || role === 'board';
+    const canCreateRequestRole = role === 'admin' || role === 'head';
+
+    let selectedTask = null;
+    if (s.selectedTaskId) {
+      const t = this.taskById(s.selectedTaskId);
+      if (t) {
+        const status = computeStatus(t);
+        const doneCount = t.subtasks.filter(x => x.done).length;
+        const canToggle = role === 'admin' || role === 'head' || role === 'employee';
+        const hasActiveRequest = s.requests.some(r => r.taskId === t.id && (r.status === 'На согласовании' || r.status === 'На доработке'));
+        const reqHistory = s.requests.filter(r => r.taskId === t.id).map(r => ({
+          fromLabel: fmtDate(r.fromDate), toLabel: fmtDate(r.toDate),
+          justification: r.justification, status: r.status,
+          initiatorName: this.userName(r.initiatorId), approverName: this.userName(r.approverId),
+          decisionReason: r.decisionReason
+        }));
+        const selMeta = statusMeta(status);
+        selectedTask = {
+          id: t.id, title: t.title, description: t.description, status,
+          badgeStyle: 'display:inline-block;font-size:12px;font-weight:700;padding:6px 14px;border-radius:20px;flex-shrink:0;background:' + selMeta.bg + ';color:' + selMeta.color + ';',
+          deptName: this.deptName(t.deptId), creatorName: this.userName(t.creatorId), assigneeName: this.userName(t.assigneeId),
+          initialDeadlineLabel: fmtDate(t.initialDeadline), currentDeadlineLabel: fmtDate(t.currentDeadline),
+          progressLabel: t.subtasks.length ? (doneCount + ' из ' + t.subtasks.length + ' выполнено') : 'Подзадачи не заведены',
+          subtasks: t.subtasks.map(st => ({
+            title: st.title, assigneeName: this.userName(st.assigneeId), deadlineLabel: fmtDate(st.deadline),
+            done: st.done, disabled: !canToggle,
+            textStyle: 'flex:1;font-size:13px;' + (st.done ? 'text-decoration:line-through;color:#A79B8A;' : ''),
+            onToggle: this.toggleSubtask(t.id, st.id)
+          })),
+          canRequestTransfer: canCreateRequestRole && status !== 'Выполнено' && !hasActiveRequest,
+          requestsHistory: reqHistory, noHistory: reqHistory.length === 0
+        };
+      }
+    }
+
+    const filteredRequests = s.requests.filter(r => s.requestFilter === 'all' || r.status === s.requestFilter).slice().reverse().map(r => {
+      const task = this.taskById(r.taskId);
+      const meta = reqStatusMeta(r.status);
+      return {
+        id: r.id, taskTitle: task.title, deptName: this.deptName(task.deptId),
+        initiatorName: this.userName(r.initiatorId), approverName: this.userName(r.approverId),
+        fromLabel: fmtDate(r.fromDate), toLabel: fmtDate(r.toDate), justification: r.justification,
+        status: r.status, decisionReason: r.decisionReason,
+        badgeStyle: 'font-size:11px;font-weight:700;padding:4px 11px;border-radius:20px;background:' + meta.bg + ';color:' + meta.color + ';',
+        canApprove: role === 'board' && r.status === 'На согласовании',
+        canApply: role === 'admin' && r.status === 'Согласована',
+        onApprove: this.decideRequest(r.id, 'Согласована', null),
+        onReject: this.decideRequest(r.id, 'Отклонена', 'Отклонено согласующим членом Правления.'),
+        onReturn: this.decideRequest(r.id, 'На доработке', 'Возвращено на доработку: требуется уточнение обоснования.'),
+        onApply: this.applyRequest(r.id)
+      };
+    });
+
+    const requestFilterDefs = [
+      { key: 'all', label: 'Все' },
+      { key: 'На согласовании', label: 'На согласовании' },
+      { key: 'Согласована', label: 'Согласованные' },
+      { key: 'Отклонена', label: 'Отклонённые' },
+      { key: 'Исполнена', label: 'Исполненные' }
+    ];
+    const requestFilterTabs = requestFilterDefs.map(f => ({
+      label: f.label, onClick: this.setRequestFilter(f.key),
+      style: 'padding:8px 14px;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;' +
+        (s.requestFilter === f.key ? 'background:#2A241C;color:#fff;' : 'background:#fff;border:1px solid #E8E2D6;color:#6B6153;')
+    }));
+
+    const deptStats = s.departments.map(d => {
+      const dTasks = enrichedTasks.filter(t => t.raw.deptId === d.id);
+      const total = dTasks.length;
+      const done = dTasks.filter(t => t.status === 'Выполнено').length;
+      const overdue = dTasks.filter(t => t.status === 'Просрочено').length;
+      return { name: d.name, total, doneCount: done, overdueCount: overdue, pct: total ? Math.round((done / total) * 100) + '%' : '0%' };
+    });
+
+    const boardStats = s.users.filter(u => u.role === 'board').map(b => {
+      const bTasks = enrichedTasks.filter(t => t.raw.creatorId === b.id);
+      return { name: b.name, count: bTasks.length, done: bTasks.filter(t => t.status === 'Выполнено').length, overdue: bTasks.filter(t => t.status === 'Просрочено').length };
+    });
+
+    const registryRows = enrichedTasks.filter(t => t.status !== 'Выполнено').slice().sort((a, b) => a.raw.currentDeadline.localeCompare(b.raw.currentDeadline)).map(t => {
+      const meta = statusMeta(t.status);
+      return {
+        title: t.title, deptName: t.deptName, deadlineLabel: t.deadlineLabel, status: t.status,
+        badgeStyle: 'display:inline-block;font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;width:fit-content;background:' + meta.bg + ';color:' + meta.color + ';'
+      };
+    });
+
+    const totalReq = s.requests.length;
+    const approvedReq = s.requests.filter(r => r.status === 'Согласована' || r.status === 'Исполнена').length;
+    const rejectedReq = s.requests.filter(r => r.status === 'Отклонена').length;
+    const daysDiffs = s.requests.map(r => {
+      const from = new Date(r.fromDate); const to = new Date(r.toDate);
+      return Math.round((to - from) / 86400000);
+    });
+    const avgDays = daysDiffs.length ? Math.round(daysDiffs.reduce((a, b) => a + b, 0) / daysDiffs.length) : 0;
+
+    const requestsAnalytics = {
+      total: totalReq,
+      approvedPct: totalReq ? Math.round((approvedReq / totalReq) * 100) + '%' : '0%',
+      rejectedPct: totalReq ? Math.round((rejectedReq / totalReq) * 100) + '%' : '0%',
+      avgDays: avgDays + ' дн.'
+    };
+
+    const analyticsKpis = [
+      { label: 'Процент исполнения', value: kpiTotal ? Math.round((kpiDone / kpiTotal) * 100) + '%' : '0%' },
+      { label: 'Соблюдение сроков', value: kpiTotal ? Math.round(((kpiTotal - kpiOverdue) / kpiTotal) * 100) + '%' : '0%' },
+      { label: 'Всего заявок на перенос', value: totalReq },
+      { label: 'Просрочено задач', value: kpiOverdue }
+    ];
+
+    const userRows = s.users.filter(u => u.role !== 'admin' || true).map(u => ({
+      name: u.name, roleLabel: ROLE_LABELS[u.role], deptName: u.deptId ? this.deptName(u.deptId) : '—'
+    }));
+
+    const departmentsRows = s.departments.map(d => ({
+      id: d.id, name: d.name, curatorName: this.userName(d.curatorId), headName: this.userName(d.headId)
+    }));
+
+    const auditRows = s.auditLog.slice().reverse().map(a => ({
+      tsLabel: a.ts.replace('T', ' '), actorName: this.userName(a.actorId), action: a.action, target: a.target
+    }));
+
+    return {
+      loggedIn: s.loggedIn,
+      demoUsers,
+      loginUserId: s.loginUserId,
+      onLoginUserChange: this.onLoginUserChange,
+      onLogin: this.onLogin,
+      onLogout: this.onLogout,
+      onRoleSwitch: this.onRoleSwitch,
+      currentUserId: s.currentUserId,
+      currentUser,
+      roleLabel: ROLE_LABELS[role],
+      navItems,
+      screenTitle: titles[s.screen],
+      screenIs: {
+        dashboard: s.screen === 'dashboard',
+        tasks: s.screen === 'tasks',
+        taskDetail: s.screen === 'task-detail',
+        requests: s.screen === 'requests',
+        analytics: s.screen === 'analytics',
+        admin: s.screen === 'admin',
+        audit: s.screen === 'audit'
+      },
+      kpiCards,
+      upcomingTasks: upcoming,
+      upcomingEmpty: upcoming.length === 0,
+      attentionItems,
+      attentionEmpty: attentionItems.length === 0,
+      taskFilters: s.taskFilters,
+      onFilterQ: this.onFilterQ, onFilterStatus: this.onFilterStatus, onFilterDept: this.onFilterDept, onFilterPriority: this.onFilterPriority,
+      departments: s.departments,
+      canCreateTask,
+      onOpenTaskForm: this.onOpenTaskForm,
+      showTaskForm: s.showTaskForm,
+      newTask: s.newTask,
+      onNewTaskTitle: this.onNewTaskTitle, onNewTaskDesc: this.onNewTaskDesc, onNewTaskDept: this.onNewTaskDept, onNewTaskPriority: this.onNewTaskPriority, onNewTaskDeadline: this.onNewTaskDeadline,
+      onCancelTaskForm: this.onCancelTaskForm, onSubmitTask: this.onSubmitTask,
+      filteredTasks,
+      onBackToTasks: this.onBackToTasks,
+      selectedTask,
+      showTransferForm: s.showTransferForm,
+      onOpenTransferForm: this.onOpenTransferForm, onCancelTransferForm: this.onCancelTransferForm,
+      newTransfer: s.newTransfer, onTransferDate: this.onTransferDate, onTransferJustification: this.onTransferJustification, onSubmitTransfer: this.onSubmitTransfer,
+      requestFilterTabs,
+      filteredRequests,
+      requestsEmpty: filteredRequests.length === 0,
+      analyticsKpis,
+      deptStats,
+      boardStats,
+      registryRows,
+      requestsAnalytics,
+      showUserForm: s.showUserForm,
+      onOpenUserForm: this.onOpenUserForm, onCancelUserForm: this.onCancelUserForm, onSubmitUser: this.onSubmitUser,
+      newUser: s.newUser, onNewUserName: this.onNewUserName, onNewUserRole: this.onNewUserRole, onNewUserDept: this.onNewUserDept,
+      userRows,
+      departmentsRows,
+      auditRows
+    };
+  }
+}
+
+</script>
+</body>
+</html>

@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: 'Manrope', sans-serif; }
+    doc-page:not(:defined) { visibility: hidden; }
+    table { border-collapse: collapse; width: 100%; }
+    th, td { border: 1px solid #E8E2D6; padding: 8px 10px; font-size: 12.5px; text-align: left; vertical-align: top; }
+    th { background: #FAF8F4; font-weight: 700; color: #4A4232; }
+    tr, table { break-inside: avoid; }
+    pre { background: #2A241C; color: #EFEAE0; padding: 14px 16px; border-radius: 6px; font-size: 12px; line-height: 1.6; overflow-x: auto; break-inside: avoid; }
+    code { font-family: 'SFMono-Regular', Consolas, monospace; }
+    h1, h2, h3 { color: #2A241C; }
+    h2 { border-bottom: 2px solid #C8A068; padding-bottom: 6px; margin-top: 34px; }
+    h3 { margin-top: 22px; color: #4A4232; }
+    .tag { display: inline-block; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 3px; color: #fff; margin-right: 6px; }
+    .get { background: #6B8F71; } .post { background: #8A6A2E; } .patch { background: #4A6FA5; } .delete { background: #9A3B2C; }
+    p, li { line-height: 1.65; }
+    .note { background: #FAF8F4; border-left: 3px solid #C8A068; padding: 10px 14px; font-size: 13px; color: #4A4232; break-inside: avoid; }
+  </style>
+</helmet>
+
+<x-import component-from-global-scope="doc-page" from="./doc-page.js" size="a4" margin="0.9in" hint-size="100%,1200px">
+
+  <h1>API-спецификация «Диспетчерская задач»</h1>
+  <p style="color:#6B6153;margin-top:-8px;">ОАО «Государственная лизинговая компания» · Информационная система управления задачами и контроля исполнительской дисциплины · Версия документа 1.0, 13.07.2026</p>
+
+  <h2>1. Общие положения</h2>
+  <p>Настоящая спецификация описывает REST API серверной части системы «Диспетчерская задач», реализующей ролевую модель, регламент переноса срока задачи и неизменяемый журнал аудита в соответствии с техническим заданием. Клиентская часть — одностраничное веб-приложение — обращается к API исключительно по протоколу HTTPS.</p>
+  <ul>
+    <li><b>Базовый URL:</b> <code>https://dispatcher.glk.kg/api/v1</code></li>
+    <li><b>Формат данных:</b> JSON (<code>Content-Type: application/json; charset=utf-8</code>)</li>
+    <li><b>Формат дат:</b> ISO 8601, даты без времени — <code>YYYY-MM-DD</code>, отметки времени — <code>YYYY-MM-DDTHH:mm:ssZ</code></li>
+    <li><b>Кодировка идентификаторов:</b> UUID v4 (строка)</li>
+    <li><b>Версионирование:</b> версия указывается префиксом пути (<code>/v1</code>); обратно несовместимые изменения выпускаются как <code>/v2</code></li>
+  </ul>
+
+  <h2>2. Аутентификация и авторизация</h2>
+  <p>Вход в систему осуществляется по учётным данным корпоративного домена <b>glk.kg</b> (Active Directory). Клиент передаёт логин/пароль на сервер аутентификации, который проверяет их через LDAP-биндинг к контроллеру домена и возвращает пару токенов.</p>
+
+  <h3>2.1. Вход по домену</h3>
+  <table>
+    <tr><th style="width:110px;">Метод и путь</th><th>Описание</th></tr>
+    <tr><td><span class="tag post">POST</span><code>/auth/login</code></td><td>Аутентификация по учётным данным AD (домен <code>glk.kg</code>). Тело: <code>{ "username": "ivanov.i", "password": "..." }</code>. Сервер выполняет LDAP-бэкенд аутентификацию и возвращает JWT-токены.</td></tr>
+    <tr><td><span class="tag post">POST</span><code>/auth/refresh</code></td><td>Обновление access-токена по действующему refresh-токену.</td></tr>
+    <tr><td><span class="tag post">POST</span><code>/auth/logout</code></td><td>Инвалидация текущей сессии (refresh-токена).</td></tr>
+    <tr><td><span class="tag get">GET</span><code>/auth/me</code></td><td>Текущий профиль пользователя, его роль(и), закреплённое СП и список курируемых СП (для члена Правления).</td></tr>
+  </table>
+
+  <pre><code>// Ответ POST /auth/login — 200 OK
+{
+  "accessToken": "eyJhbGciOi...",
+  "refreshToken": "8f3d1c2a...",
+  "expiresIn": 900,
+  "user": {
+    "id": "6d1f...", "fullName": "Осмонов Нурлан Асанович",
+    "login": "osmonov.n", "role": "board",
+    "departmentId": null,
+    "curatedDepartmentIds": ["d1", "d2"]
+  }
+}</code></pre>
+
+  <p>Access-токен (JWT, TTL 15 минут) передаётся в заголовке <code>Authorization: Bearer &lt;token&gt;</code> в каждом запросе. Refresh-токен (TTL 12 часов) хранится сервером и используется только для обновления access-токена. Токен содержит <code>sub</code> (id пользователя), <code>role</code>, <code>departmentId</code>, <code>curatedDepartmentIds</code>, <code>iat</code>, <code>exp</code>.</p>
+
+  <div class="note">Опционально: усиленная ЭЦП (интеграция с Infodocs) для подтверждения решения по заявке на перенос срока — описана в разделе 6.4 как отдельный флаг запроса.</div>
+
+  <h3>2.2. Роли и разграничение доступа (RBAC)</h3>
+  <table>
+    <tr><th>Роль (<code>role</code>)</th><th>Значение</th></tr>
+    <tr><td><code>admin</code></td><td>Администратор — полный доступ, единственная роль, технически изменяющая срок задачи</td></tr>
+    <tr><td><code>board</code></td><td>Член Правления — постановка задач, согласование переноса срока по курируемым СП</td></tr>
+    <tr><td><code>head</code></td><td>Начальник СП — декомпозиция на подзадачи, инициирование заявок на перенос</td></tr>
+    <tr><td><code>employee</code></td><td>Сотрудник СП (опционально) — просмотр и отметка исполнения</td></tr>
+    <tr><td><code>observer</code></td><td>Наблюдатель (опционально) — доступ только на чтение</td></tr>
+  </table>
+  <p>Каждый защищённый эндпоинт проверяет роль из JWT и, где применимо, принадлежность пользователя к СП (<code>departmentId</code>) или список курируемых СП (<code>curatedDepartmentIds</code>). Матрица доступа по каждому эндпоинту приведена в соответствующих разделах ниже; сводная матрица — в разделе 8.</p>
+
+  <h2>3. Общие конвенции API</h2>
+
+  <h3>3.1. Пагинация</h3>
+  <p>Списочные эндпоинты принимают параметры <code>page</code> (по умолчанию 1) и <code>pageSize</code> (по умолчанию 20, максимум 100) и возвращают конверт:</p>
+  <pre><code>{
+  "items": [ /* ... */ ],
+  "page": 1, "pageSize": 20, "total": 137, "totalPages": 7
+}</code></pre>
+
+  <h3>3.2. Фильтрация и сортировка</h3>
+  <p>Списочные эндпоинты задач, заявок и журнала аудита принимают query-параметры фильтрации (перечислены в описании каждого эндпоинта) и параметр <code>sort</code> вида <code>-createdAt</code> (минус — по убыванию).</p>
+
+  <h3>3.3. Формат ошибок</h3>
+  <pre><code>{
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "Поле \"proposedDeadline\" обязательно для заполнения",
+    "field": "proposedDeadline"
+  }
+}</code></pre>
+  <table>
+    <tr><th style="width:70px;">HTTP</th><th style="width:200px;">Код</th><th>Значение</th></tr>
+    <tr><td>400</td><td><code>VALIDATION_ERROR</code></td><td>Некорректные данные запроса</td></tr>
+    <tr><td>401</td><td><code>UNAUTHENTICATED</code></td><td>Токен отсутствует, истёк или недействителен</td></tr>
+    <tr><td>403</td><td><code>FORBIDDEN</code></td><td>Роль/принадлежность к СП не позволяет выполнить действие</td></tr>
+    <tr><td>404</td><td><code>NOT_FOUND</code></td><td>Объект не найден</td></tr>
+    <tr><td>409</td><td><code>CONFLICT</code></td><td>Например, попытка создать вторую активную заявку по задаче</td></tr>
+    <tr><td>422</td><td><code>INVALID_STATE_TRANSITION</code></td><td>Недопустимый переход статуса (напр. применение неcогласованной заявки)</td></tr>
+    <tr><td>500</td><td><code>INTERNAL_ERROR</code></td><td>Внутренняя ошибка сервера</td></tr>
+  </table>
+
+  <h2>4. Модель данных</h2>
+
+  <h3>4.1. User (Пользователь)</h3>
+  <table>
+    <tr><th style="width:170px;">Поле</th><th style="width:110px;">Тип</th><th>Описание</th></tr>
+    <tr><td><code>id</code></td><td>UUID</td><td>Идентификатор</td></tr>
+    <tr><td><code>fullName</code></td><td>string</td><td>ФИО (синхронизируется из AD)</td></tr>
+    <tr><td><code>login</code></td><td>string</td><td>Логин AD без домена</td></tr>
+    <tr><td><code>role</code></td><td>enum</td><td><code>admin</code> · <code>board</code> · <code>head</code> · <code>employee</code> · <code>observer</code></td></tr>
+    <tr><td><code>departmentId</code></td><td>UUID?</td><td>Закреплённое СП (для <code>head</code>/<code>employee</code>)</td></tr>
+    <tr><td><code>curatedDepartmentIds</code></td><td>UUID[]</td><td>Курируемые СП (для <code>board</code>)</td></tr>
+    <tr><td><code>isActive</code></td><td>boolean</td><td>Признак активной учётной записи</td></tr>
+  </table>
+
+  <h3>4.2. Department (Структурное подразделение)</h3>
+  <table>
+    <tr><th style="width:170px;">Поле</th><th style="width:110px;">Тип</th><th>Описание</th></tr>
+    <tr><td><code>id</code></td><td>UUID</td><td>Идентификатор</td></tr>
+    <tr><td><code>name</code></td><td>string</td><td>Наименование СП</td></tr>
+    <tr><td><code>curatorId</code></td><td>UUID</td><td>Курирующий член Правления</td></tr>
+    <tr><td><code>headId</code></td><td>UUID</td><td>Начальник СП</td></tr>
+  </table>
+
+  <h3>4.3. Task (Задача)</h3>
+  <table>
+    <tr><th style="width:170px;">Поле</th><th style="width:110px;">Тип</th><th>Описание</th></tr>
+    <tr><td><code>id</code></td><td>UUID</td><td>Идентификатор</td></tr>
+    <tr><td><code>title</code>, <code>description</code></td><td>string</td><td>Наименование и описание</td></tr>
+    <tr><td><code>creatorId</code></td><td>UUID</td><td>Постановщик (член Правления)</td></tr>
+    <tr><td><code>departmentId</code></td><td>UUID</td><td>СП-исполнитель</td></tr>
+    <tr><td><code>assigneeId</code></td><td>UUID</td><td>Ответственный (по умолчанию — начальник СП)</td></tr>
+    <tr><td><code>priority</code></td><td>enum</td><td><code>high</code> · <code>medium</code> · <code>low</code></td></tr>
+    <tr><td><code>initialDeadline</code></td><td>date</td><td>Первоначальный срок (неизменяем)</td></tr>
+    <tr><td><code>currentDeadline</code></td><td>date</td><td>Текущий срок (меняется только через регламент, разд. 6)</td></tr>
+    <tr><td><code>status</code></td><td>enum, вычисляемое</td><td><code>new</code> · <code>in_progress</code> · <code>done</code> · <code>overdue</code> — рассчитывается сервером, не задаётся напрямую</td></tr>
+    <tr><td><code>createdAt</code>, <code>closedAt</code></td><td>datetime</td><td>Служебные отметки</td></tr>
+  </table>
+
+  <h3>4.4. Subtask (Подзадача)</h3>
+  <table>
+    <tr><th style="width:170px;">Поле</th><th style="width:110px;">Тип</th><th>Описание</th></tr>
+    <tr><td><code>id</code>, <code>taskId</code></td><td>UUID</td><td>Идентификатор и ссылка на задачу</td></tr>
+    <tr><td><code>title</code></td><td>string</td><td>Наименование</td></tr>
+    <tr><td><code>assigneeId</code></td><td>UUID</td><td>Ответственный исполнитель</td></tr>
+    <tr><td><code>deadline</code></td><td>date</td><td>Срок подзадачи</td></tr>
+    <tr><td><code>done</code></td><td>boolean</td><td>Признак выполнения</td></tr>
+  </table>
+
+  <h3>4.5. TransferRequest (Заявка на перенос срока)</h3>
+  <table>
+    <tr><th style="width:170px;">Поле</th><th style="width:110px;">Тип</th><th>Описание</th></tr>
+    <tr><td><code>id</code>, <code>taskId</code></td><td>UUID</td><td>Идентификатор и ссылка на задачу</td></tr>
+    <tr><td><code>initiatorId</code></td><td>UUID</td><td>Начальник СП, создавший заявку</td></tr>
+    <tr><td><code>approverId</code></td><td>UUID</td><td>Курирующий член Правления</td></tr>
+    <tr><td><code>currentDeadline</code>, <code>proposedDeadline</code></td><td>date</td><td>Срок «до» и предлагаемый «после»</td></tr>
+    <tr><td><code>justification</code></td><td>string</td><td>Текстовое обоснование причин переноса</td></tr>
+    <tr><td><code>status</code></td><td>enum</td><td><code>draft</code> · <code>pending</code> · <code>approved</code> · <code>rejected</code> · <code>revision</code> · <code>applied</code></td></tr>
+    <tr><td><code>decisionReason</code></td><td>string?</td><td>Причина при отклонении/возврате</td></tr>
+    <tr><td><code>submittedAt</code>, <code>decidedAt</code>, <code>appliedAt</code></td><td>datetime</td><td>Отметки времени этапов</td></tr>
+    <tr><td><code>appliedById</code></td><td>UUID?</td><td>Администратор, применивший новый срок</td></tr>
+  </table>
+
+  <h3>4.6. AuditLogEntry (Запись журнала аудита)</h3>
+  <table>
+    <tr><th style="width:170px;">Поле</th><th style="width:110px;">Тип</th><th>Описание</th></tr>
+    <tr><td><code>id</code></td><td>UUID</td><td>Идентификатор записи</td></tr>
+    <tr><td><code>ts</code></td><td>datetime</td><td>Дата и время действия</td></tr>
+    <tr><td><code>actorId</code></td><td>UUID</td><td>Пользователь, совершивший действие</td></tr>
+    <tr><td><code>entityType</code>, <code>entityId</code></td><td>string, UUID</td><td>Тип и идентификатор объекта</td></tr>
+    <tr><td><code>action</code></td><td>string</td><td>Тип действия (создание, изменение статуса, решение по заявке и т.д.)</td></tr>
+    <tr><td><code>before</code>, <code>after</code></td><td>object?</td><td>Значения полей до и после изменения</td></tr>
+  </table>
+  <p>Записи журнала неизменяемы: API не предоставляет методов редактирования или удаления записей аудита ни для одной роли, включая администратора.</p>
+
+  <h2>5. Пользователи и структурные подразделения</h2>
+  <table>
+    <tr><th style="width:230px;">Метод и путь</th><th>Описание</th><th style="width:150px;">Доступ</th></tr>
+    <tr><td><span class="tag get">GET</span><code>/users</code></td><td>Список пользователей. Фильтры: <code>role</code>, <code>departmentId</code>, <code>isActive</code></td><td><code>admin</code></td></tr>
+    <tr><td><span class="tag get">GET</span><code>/users/{id}</code></td><td>Карточка пользователя</td><td><code>admin</code></td></tr>
+    <tr><td><span class="tag post">POST</span><code>/users</code></td><td>Создание пользователя (обычно — импорт из AD с назначением роли и СП)</td><td><code>admin</code></td></tr>
+    <tr><td><span class="tag patch">PATCH</span><code>/users/{id}</code></td><td>Изменение роли, привязки к СП, статуса активности</td><td><code>admin</code></td></tr>
+    <tr><td><span class="tag get">GET</span><code>/departments</code></td><td>Список структурных подразделений с курирующим членом Правления и начальником</td><td>любая роль</td></tr>
+    <tr><td><span class="tag post">POST</span><code>/departments</code></td><td>Создание СП</td><td><code>admin</code></td></tr>
+    <tr><td><span class="tag patch">PATCH</span><code>/departments/{id}</code></td><td>Изменение курирующего члена Правления / начальника СП</td><td><code>admin</code></td></tr>
+  </table>
+
+  <h2>6. Задачи и подзадачи</h2>
+
+  <h3>6.1. Задачи</h3>
+  <table>
+    <tr><th style="width:230px;">Метод и путь</th><th>Описание</th><th style="width:150px;">Доступ</th></tr>
+    <tr><td><span class="tag get">GET</span><code>/tasks</code></td><td>Список задач. Фильтры: <code>status</code>, <code>departmentId</code>, <code>creatorId</code>, <code>priority</code>, <code>q</code> (поиск по названию)</td><td>по роли (см. прим.)</td></tr>
+    <tr><td><span class="tag get">GET</span><code>/tasks/{id}</code></td><td>Карточка задачи с подзадачами и историей переносов</td><td>по роли</td></tr>
+    <tr><td><span class="tag post">POST</span><code>/tasks</code></td><td>Создание задачи. Тело: <code>title, description, departmentId, assigneeId?, priority, initialDeadline</code>. Сервер фиксирует <code>currentDeadline = initialDeadline</code></td><td><code>admin</code>, <code>board</code></td></tr>
+    <tr><td><span class="tag patch">PATCH</span><code>/tasks/{id}</code></td><td>Изменение названия/описания/приоритета/ответственного. <b>Поле <code>currentDeadline</code> недоступно для прямого изменения</b> — возвращает 422</td><td><code>admin</code>, <code>board</code>-постановщик</td></tr>
+    <tr><td><span class="tag delete">DELETE</span><code>/tasks/{id}</code></td><td>Удаление задачи (только в статусе <code>new</code>, без активных заявок)</td><td><code>admin</code></td></tr>
+    <tr><td><span class="tag patch">PATCH</span><code>/tasks/{id}/close</code></td><td>Явная отметка задачи выполненной (если не все подзадачи закрыты)</td><td><code>admin</code>, <code>head</code> курируемого СП</td></tr>
+  </table>
+  <div class="note">Просмотр: <code>admin</code> и <code>board</code> видят все задачи; <code>head</code>/<code>employee</code> — только задачи своего СП (<code>departmentId</code> = <code>user.departmentId</code>); <code>observer</code> — все задачи, только чтение.</div>
+
+  <h3>6.2. Подзадачи</h3>
+  <table>
+    <tr><th style="width:230px;">Метод и путь</th><th>Описание</th><th style="width:150px;">Доступ</th></tr>
+    <tr><td><span class="tag post">POST</span><code>/tasks/{id}/subtasks</code></td><td>Декомпозиция задачи: создание подзадачи (<code>title, assigneeId, deadline</code>)</td><td><code>admin</code>, <code>board</code>, <code>head</code> своего СП</td></tr>
+    <tr><td><span class="tag patch">PATCH</span><code>/subtasks/{id}</code></td><td>Редактирование подзадачи</td><td><code>admin</code>, <code>head</code> своего СП</td></tr>
+    <tr><td><span class="tag patch">PATCH</span><code>/subtasks/{id}/toggle</code></td><td>Отметка выполнения/снятие отметки. Пересчитывает статус и прогресс родительской задачи</td><td><code>admin</code>, <code>head</code>, <code>employee</code> — ответственный по подзадаче</td></tr>
+    <tr><td><span class="tag delete">DELETE</span><code>/subtasks/{id}</code></td><td>Удаление подзадачи</td><td><code>admin</code>, <code>head</code> своего СП</td></tr>
+  </table>
+  <p>Статус задачи (<code>status</code>) всегда вычисляется сервером по правилам: <code>done</code> — все подзадачи закрыты или задача явно отмечена выполненной; иначе <code>overdue</code> — если <code>currentDeadline</code> в прошлом; иначе <code>in_progress</code> — если есть прогресс по подзадачам; иначе <code>new</code>.</p>
+
+  <h2>7. Регламент переноса срока</h2>
+  <p>Реализует процедуру из трёх этапов: обоснование (начальник СП) → согласование (курирующий член Правления) → исполнение (администратор). Технически новый срок задачи вносит исключительно администратор методом <code>apply</code>.</p>
+  <table>
+    <tr><th style="width:250px;">Метод и путь</th><th>Описание</th><th style="width:150px;">Доступ</th></tr>
+    <tr><td><span class="tag get">GET</span><code>/transfer-requests</code></td><td>Список заявок. Фильтры: <code>status</code>, <code>taskId</code>, <code>departmentId</code>, <code>initiatorId</code>, <code>approverId</code></td><td>по роли</td></tr>
+    <tr><td><span class="tag get">GET</span><code>/transfer-requests/{id}</code></td><td>Карточка заявки</td><td>по роли</td></tr>
+    <tr><td><span class="tag post">POST</span><code>/tasks/{id}/transfer-requests</code></td><td>Создание заявки в статусе <code>draft</code>. Тело: <code>proposedDeadline, justification</code>. Отклоняется (409), если по задаче уже есть активная заявка</td><td><code>head</code> своего СП, <code>admin</code></td></tr>
+    <tr><td><span class="tag patch">PATCH</span><code>/transfer-requests/{id}/submit</code></td><td><code>draft</code> → <code>pending</code>. Требует заполненных <code>proposedDeadline</code> и <code>justification</code></td><td>инициатор, <code>admin</code></td></tr>
+    <tr><td><span class="tag patch">PATCH</span><code>/transfer-requests/{id}/approve</code></td><td><code>pending</code> → <code>approved</code></td><td><code>board</code>-куратор СП, <code>admin</code></td></tr>
+    <tr><td><span class="tag patch">PATCH</span><code>/transfer-requests/{id}/reject</code></td><td><code>pending</code> → <code>rejected</code>. Тело: <code>decisionReason</code> (обязательно). Срок задачи не меняется, заявка завершается</td><td><code>board</code>-куратор СП, <code>admin</code></td></tr>
+    <tr><td><span class="tag patch">PATCH</span><code>/transfer-requests/{id}/return</code></td><td><code>pending</code> → <code>revision</code>. Тело: <code>decisionReason</code>. Возвращается инициатору на доработку и повторную отправку</td><td><code>board</code>-куратор СП, <code>admin</code></td></tr>
+    <tr><td><span class="tag patch">PATCH</span><code>/transfer-requests/{id}/apply</code></td><td><code>approved</code> → <code>applied</code>. Переносит <code>proposedDeadline</code> в <code>task.currentDeadline</code>, пишет запись в журнал аудита с полной трассировкой (инициатор, согласующий, резолюция, исполнитель)</td><td><code>admin</code> — единственная роль</td></tr>
+  </table>
+  <p><b>Правило одной активной заявки:</b> по одной задаче одновременно допускается не более одной заявки в статусе <code>draft</code>, <code>pending</code> или <code>revision</code>; попытка создать вторую возвращает 409 <code>CONFLICT</code>.</p>
+
+  <pre><code>// PATCH /transfer-requests/{id}/reject — тело запроса
+{ "decisionReason": "Кампания приурочена к сезонному спросу, перенос недопустим" }
+
+// Опциональное подтверждение усиленной ЭЦП (Infodocs)
+{ "decisionReason": "...", "signature": { "provider": "infodocs", "signedPayloadId": "sp_8f21..." } }</code></pre>
+
+  <h2>8. Сводная матрица доступа по действиям</h2>
+  <table>
+    <tr><th>Действие</th><th style="width:70px;">Admin</th><th style="width:70px;">Правл.</th><th style="width:70px;">Нач. СП</th><th style="width:70px;">Сотр./Набл.</th></tr>
+    <tr><td>Постановка задачи, установка первоначального срока</td><td>✓</td><td>✓</td><td>—</td><td>—</td></tr>
+    <tr><td>Декомпозиция на подзадачи</td><td>✓</td><td>✓</td><td>✓ (своё СП)</td><td>—</td></tr>
+    <tr><td>Отметка исполнения подзадачи</td><td>✓</td><td>—</td><td>✓ (своё СП)</td><td>✓ (своя подзадача)</td></tr>
+    <tr><td>Создание заявки на перенос срока</td><td>✓</td><td>—</td><td>✓ (своё СП)</td><td>—</td></tr>
+    <tr><td>Согласование / отклонение заявки</td><td>✓</td><td>✓ (курируемое СП)</td><td>—</td><td>—</td></tr>
+    <tr><td>Применение нового срока (<code>apply</code>)</td><td>✓</td><td>—</td><td>—</td><td>—</td></tr>
+    <tr><td>Просмотр аналитики</td><td>✓</td><td>✓</td><td>✓ (своё СП)</td><td>✓ (чтение)</td></tr>
+    <tr><td>Просмотр журнала аудита</td><td>✓</td><td>✓</td><td>✓ (свои задачи)</td><td>—</td></tr>
+    <tr><td>Управление пользователями и СП</td><td>✓</td><td>—</td><td>—</td><td>—</td></tr>
+  </table>
+
+  <h2>9. Аналитика и экспорт</h2>
+  <table>
+    <tr><th style="width:250px;">Метод и путь</th><th>Описание</th><th style="width:150px;">Доступ</th></tr>
+    <tr><td><span class="tag get">GET</span><code>/analytics/summary</code></td><td>Сводные KPI: всего задач, выполнено, в работе, просрочено, % исполнения, % соблюдения сроков. Фильтры: <code>from</code>, <code>to</code>, <code>departmentId</code>, <code>boardMemberId</code></td><td>по роли, разд. 8</td></tr>
+    <tr><td><span class="tag get">GET</span><code>/analytics/departments</code></td><td>Разрез по СП: нагрузка, доля выполнения, число просрочек</td><td>по роли</td></tr>
+    <tr><td><span class="tag get">GET</span><code>/analytics/board-members</code></td><td>Разрез по членам Правления: количество поставленных задач и их статусное распределение</td><td><code>admin</code>, <code>board</code></td></tr>
+    <tr><td><span class="tag get">GET</span><code>/analytics/transfer-requests</code></td><td>Число заявок, доля согласованных/отклонённых, средняя величина переноса в днях, подразделения-лидеры по числу переносов</td><td><code>admin</code>, <code>board</code></td></tr>
+    <tr><td><span class="tag get">GET</span><code>/analytics/registry</code></td><td>Реестр ближайших сроков и просроченных задач</td><td>по роли</td></tr>
+    <tr><td><span class="tag get">GET</span><code>/export/tasks?format=xlsx|pdf</code></td><td>Выгрузка реестра задач с применёнными фильтрами</td><td><code>admin</code>, <code>board</code></td></tr>
+    <tr><td><span class="tag get">GET</span><code>/export/analytics?format=xlsx|pdf</code></td><td>Выгрузка аналитических показателей для Правления и Совета директоров</td><td><code>admin</code>, <code>board</code></td></tr>
+  </table>
+
+  <h2>10. Уведомления</h2>
+  <table>
+    <tr><th style="width:250px;">Метод и путь</th><th>Описание</th><th style="width:150px;">Доступ</th></tr>
+    <tr><td><span class="tag get">GET</span><code>/notifications</code></td><td>Список уведомлений текущего пользователя. Фильтр <code>unreadOnly=true</code></td><td>любая роль</td></tr>
+    <tr><td><span class="tag patch">PATCH</span><code>/notifications/{id}/read</code></td><td>Отметить уведомление прочитанным</td><td>владелец уведомления</td></tr>
+  </table>
+  <p>События, порождающие уведомления: постановка задачи → начальнику СП; поступление заявки на согласование → курирующему члену Правления; решение по заявке → инициатору; наличие согласованной заявки → администратору; применение нового срока → постановщику задачи (в т.ч. если он не является куратором исполняющего СП).</p>
+
+  <h2>11. Журнал аудита</h2>
+  <table>
+    <tr><th style="width:250px;">Метод и путь</th><th>Описание</th><th style="width:150px;">Доступ</th></tr>
+    <tr><td><span class="tag get">GET</span><code>/audit-log</code></td><td>Список записей, только чтение. Фильтры: <code>entityType</code>, <code>entityId</code>, <code>actorId</code>, <code>from</code>, <code>to</code>. Сортировка по умолчанию — <code>-ts</code></td><td><code>admin</code>, <code>board</code>, <code>head</code> (только свои задачи)</td></tr>
+  </table>
+  <p>Эндпоинты изменения или удаления записей аудита в API отсутствуют намеренно — журнал append-only на уровне схемы БД (запись создаётся исключительно триггерами/сервисным слоем при выполнении действий, описанных в разделах 5–7).</p>
+
+  <h2>12. Нефункциональные требования к реализации API</h2>
+  <ul>
+    <li>Хранение — реляционная СУБД (PostgreSQL), регулярное резервное копирование.</li>
+    <li>Все мутирующие эндпоинты идемпотентны в рамках заголовка <code>Idempotency-Key</code> (рекомендуется для <code>POST</code>).</li>
+    <li>Ограничение частоты запросов: 100 запросов/мин на пользователя (429 <code>RATE_LIMITED</code>).</li>
+    <li>Локализация сообщений — русский язык.</li>
+    <li>Логи доступа и ошибок хранятся отдельно от бизнес-журнала аудита (раздел 11) и не подменяют его.</li>
+  </ul>
+
+</x-import>
+
+</x-dc>
+</body>
+</html>
