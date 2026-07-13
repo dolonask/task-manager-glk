@@ -37,6 +37,11 @@ export function TaskDetailPage() {
     onSuccess: invalidateTask,
   });
 
+  const deleteSubtaskMutation = useMutation({
+    mutationFn: (subtaskId: string) => subtasksApi.remove(subtaskId),
+    onSuccess: invalidateTask,
+  });
+
   const task = taskQuery.data;
 
   if (taskQuery.isLoading) {
@@ -63,6 +68,8 @@ export function TaskDetailPage() {
 
   const canDecompose =
     user?.role === "admin" || user?.role === "board" || (user?.role === "head" && user.departmentId === task.departmentId);
+
+  const canDeleteSubtask = user?.role === "admin" || (user?.role === "head" && user.departmentId === task.departmentId);
 
   const hasActiveTransfer = task.transferRequests.some((tr) => ACTIVE_TRANSFER_STATUSES.has(tr.status));
   const canRequestTransfer =
@@ -142,6 +149,22 @@ export function TaskDetailPage() {
               </div>
               <div style={{ fontSize: 12, color: "var(--color-text-muted)" }}>{s.assigneeName ?? "—"}</div>
               <div style={{ fontSize: 12, color: "var(--color-text-muted)" }}>{s.deadline}</div>
+              {canDeleteSubtask && (
+                <button
+                  type="button"
+                  style={{ border: "none", background: "none", padding: 0, color: "var(--priority-high)", fontSize: 12 }}
+                  disabled={deleteSubtaskMutation.isPending}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (window.confirm(`Удалить подзадачу «${s.title}»?`)) {
+                      deleteSubtaskMutation.mutate(s.id);
+                    }
+                  }}
+                >
+                  Удалить
+                </button>
+              )}
             </label>
           ))}
 
