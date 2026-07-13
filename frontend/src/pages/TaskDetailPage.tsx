@@ -42,6 +42,16 @@ export function TaskDetailPage() {
     onSuccess: invalidateTask,
   });
 
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const deleteTaskMutation = useMutation({
+    mutationFn: () => tasksApi.remove(id!),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      navigate("/tasks", { replace: true });
+    },
+    onError: (err) => setDeleteError(err instanceof ApiError ? err.message : "Не удалось удалить задачу"),
+  });
+
   const task = taskQuery.data;
 
   if (taskQuery.isLoading) {
@@ -72,6 +82,8 @@ export function TaskDetailPage() {
   const canDeleteSubtask = user?.role === "admin" || (user?.role === "head" && user.departmentId === task.departmentId);
 
   const hasActiveTransfer = task.transferRequests.some((tr) => ACTIVE_TRANSFER_STATUSES.has(tr.status));
+  const canDeleteTask = user?.role === "admin";
+  const deleteTaskAllowed = task.status === "new" && !hasActiveTransfer;
   const canRequestTransfer =
     task.status !== "done" &&
     !hasActiveTransfer &&
@@ -96,8 +108,29 @@ export function TaskDetailPage() {
             <div style={{ fontSize: 19, fontWeight: 700, marginBottom: 8 }}>{task.title}</div>
             <div style={{ fontSize: 13, color: "var(--color-text-secondary)" }}>{task.description}</div>
           </div>
-          <TaskStatusBadge status={task.status} />
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <TaskStatusBadge status={task.status} />
+            {canDeleteTask && (
+              <button
+                type="button"
+                className="btn-outline-danger"
+                disabled={!deleteTaskAllowed || deleteTaskMutation.isPending}
+                title={deleteTaskAllowed ? undefined : "Удалить можно только новую задачу без активных заявок на перенос срока"}
+                onClick={() => {
+                  if (window.confirm(`Удалить задачу «${task.title}»? Это действие необратимо.`)) {
+                    setDeleteError(null);
+                    deleteTaskMutation.mutate();
+                  }
+                }}
+              >
+                Удалить задачу
+              </button>
+            )}
+          </div>
         </div>
+        {deleteError && (
+          <div style={{ color: "var(--priority-high)", fontSize: 13, marginBottom: 12 }}>{deleteError}</div>
+        )}
         <div style={{ borderTop: "1px solid var(--color-border)", paddingTop: 16, display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 12 }}>
           <Meta label="СП-исполнитель" value={task.departmentName} />
           <Meta label="Постановщик" value={task.creatorName} />
