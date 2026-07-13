@@ -23,17 +23,15 @@ This builds and starts three containers:
 | Backend API | http://localhost:8090/api/v1 | Also reachable directly, e.g. for `curl` |
 | PostgreSQL | localhost:5432 | db/user/password: `taskmanager` / `taskmanager` / `taskmanager` |
 
-On first boot, `DataSeeder` populates demo departments, tasks, and one account per role — **password `Passw0rd!`** for all of them:
+On first boot, `DataSeeder` creates a single administrator account and nothing else:
 
-| Login | Role |
-|---|---|
-| `admin` | Administrator |
-| `osmonov.n`, `zhumabekova.a`, `sadykov.m` | Board member (Правление) — curators of the 3 seeded departments |
-| `abdyldaev.u`, `mambetova.ch`, `toktosunov.b` | Department head (Начальник СП) |
-| `asanov.d` | Employee (Сотрудник СП) |
-| `observer` | Observer |
+| Login | Password | Role |
+|---|---|---|
+| `admin` | `Passw0rd!` | Administrator |
 
-To stop everything: `docker compose down` (add `-v` to also wipe the Postgres volume and reseed on next start).
+Log in as `admin` and use the **Пользователи и СП** panel to create departments and the rest of the users (board members, department heads, employees, observers) — there's no Active Directory integration, so admin sets everyone's password directly (see [Configuration](#configuration) below).
+
+To stop everything: `docker compose down` (add `-v` to also wipe the Postgres volume — the admin account will be reseeded on next start, but any departments/users/tasks you created are lost).
 
 ### Local development (without Docker)
 
