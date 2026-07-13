@@ -18,6 +18,7 @@ export function TaskDetailPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [showTransferForm, setShowTransferForm] = useState(false);
+  const [showSubtaskForm, setShowSubtaskForm] = useState(false);
 
   const taskQuery = useQuery({
     queryKey: ["tasks", id],
@@ -59,6 +60,9 @@ export function TaskDetailPage() {
     (user?.role === "employee" && assigneeId === user.id);
 
   const canEditAssignee = user?.role === "admin" || (user?.role === "board" && task.creatorId === user.id);
+
+  const canDecompose =
+    user?.role === "admin" || user?.role === "board" || (user?.role === "head" && user.departmentId === task.departmentId);
 
   const hasActiveTransfer = task.transferRequests.some((tr) => ACTIVE_TRANSFER_STATUSES.has(tr.status));
   const canRequestTransfer =
@@ -140,6 +144,23 @@ export function TaskDetailPage() {
               <div style={{ fontSize: 12, color: "var(--color-text-muted)" }}>{s.deadline}</div>
             </label>
           ))}
+
+          {canDecompose && !showSubtaskForm && (
+            <button className="btn-secondary" style={{ marginTop: 16 }} onClick={() => setShowSubtaskForm(true)}>
+              + Добавить подзадачу
+            </button>
+          )}
+          {canDecompose && showSubtaskForm && (
+            <AddSubtaskForm
+              taskId={task.id}
+              departmentId={task.departmentId}
+              onCancel={() => setShowSubtaskForm(false)}
+              onCreated={() => {
+                setShowSubtaskForm(false);
+                invalidateTask();
+              }}
+            />
+          )}
 
           {canRequestTransfer && !showTransferForm && (
             <button className="btn-outline-gold" style={{ marginTop: 16 }} onClick={() => setShowTransferForm(true)}>
@@ -260,6 +281,76 @@ function AssigneeEditor({
         </button>
       </div>
     </div>
+  );
+}
+
+function AddSubtaskForm({
+  taskId,
+  departmentId,
+  onCancel,
+  onCreated,
+}: {
+  taskId: string;
+  departmentId: string;
+  onCancel: () => void;
+  onCreated: () => void;
+}) {
+  const [title, setTitle] = useState("");
+  const [assigneeId, setAssigneeId] = useState("");
+  const [deadline, setDeadline] = useState("");
+  const [error, setError] = useState<string | null>(null);
+
+  const usersQuery = useQuery({
+    queryKey: ["users", { departmentId }],
+    queryFn: () => usersApi.list({ departmentId }),
+  });
+  const options = (usersQuery.data ?? []).filter((u) => u.role === "head" || u.role === "employee");
+
+  const mutation = useMutation({
+    mutationFn: () => subtasksApi.create(taskId, { title, assigneeId: assigneeId || undefined, deadline }),
+    onSuccess: onCreated,
+    onError: (err) => setError(err instanceof ApiError ? err.message : "Не удалось добавить подзадачу"),
+  });
+
+  const handleSubmit = (e: FormEvent) => {
+    e.preventDefault();
+    if (!title.trim() || !deadline) return;
+    mutation.mutate();
+  };
+
+  return (
+    <form onSubmit={handleSubmit} style={{ marginTop: 16, borderTop: "1px solid var(--color-border)", paddingTop: 16 }}>
+      <div style={{ marginBottom: 10 }}>
+        <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 6 }}>Название подзадачи</div>
+        <input value={title} onChange={(e) => setTitle(e.target.value)} required style={{ width: "100%" }} />
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
+        <div>
+          <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 6 }}>Исполнитель</div>
+          <select value={assigneeId} onChange={(e) => setAssigneeId(e.target.value)} style={{ width: "100%" }}>
+            <option value="">Не выбран</option>
+            {options.map((u) => (
+              <option key={u.id} value={u.id}>
+                {u.fullName}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 6 }}>Срок</div>
+          <input type="date" value={deadline} onChange={(e) => setDeadline(e.target.value)} required style={{ width: "100%" }} />
+        </div>
+      </div>
+      {error && <div style={{ color: "var(--priority-high)", fontSize: 13, marginBottom: 10 }}>{error}</div>}
+      <div style={{ display: "flex", gap: 10 }}>
+        <button type="button" className="btn-secondary" onClick={onCancel}>
+          Отмена
+        </button>
+        <button type="submit" className="btn-primary" disabled={mutation.isPending}>
+          Добавить
+        </button>
+      </div>
+    </form>
   );
 }
 
