@@ -1,5 +1,64 @@
 # Handoff: «Диспетчерская задач» — GLK Task Dispatcher
 
+## Setup
+
+This repo contains a Spring Boot backend (`task-manager/`), a React frontend (`frontend/`), and a `docker-compose.yml` that runs both together with a PostgreSQL database.
+
+### Prerequisites
+
+- [Docker](https://www.docker.com/) with Docker Compose (the only requirement for the quick start below)
+- For local (non-Docker) development: Java 17, and Node.js 20+ for the frontend
+
+### Quick start (Docker)
+
+```bash
+docker compose up --build
+```
+
+This builds and starts three containers:
+
+| Service | URL | Notes |
+|---|---|---|
+| Frontend | http://localhost:8081 | React app, served by nginx, proxies `/api/*` to the backend |
+| Backend API | http://localhost:8090/api/v1 | Also reachable directly, e.g. for `curl` |
+| PostgreSQL | localhost:5432 | db/user/password: `taskmanager` / `taskmanager` / `taskmanager` |
+
+On first boot, `DataSeeder` populates demo departments, tasks, and one account per role — **password `Passw0rd!`** for all of them:
+
+| Login | Role |
+|---|---|
+| `admin` | Administrator |
+| `osmonov.n`, `zhumabekova.a`, `sadykov.m` | Board member (Правление) — curators of the 3 seeded departments |
+| `abdyldaev.u`, `mambetova.ch`, `toktosunov.b` | Department head (Начальник СП) |
+| `asanov.d` | Employee (Сотрудник СП) |
+| `observer` | Observer |
+
+To stop everything: `docker compose down` (add `-v` to also wipe the Postgres volume and reseed on next start).
+
+### Local development (without Docker)
+
+Backend (uses an in-memory H2 database by default — no Postgres needed):
+
+```bash
+cd task-manager
+./mvnw spring-boot:run       # mvnw.cmd on Windows
+./mvnw test                  # run tests
+```
+
+Frontend (dev server on port 5173, proxies `/api` to `http://localhost:8090` — see `frontend/vite.config.ts`):
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+### Configuration
+
+- Backend config: `task-manager/src/main/resources/application.yaml`. The `docker` Spring profile (activated via `SPRING_PROFILES_ACTIVE=docker` in `docker-compose.yml`) switches the datasource from H2 to Postgres.
+- The JWT signing secret (`APP_JWT_SECRET`) and Postgres credentials in `docker-compose.yml` are **dev-only placeholders** — replace them before any real deployment.
+- Authentication currently checks a local BCrypt password hash per user, not a real Active Directory/LDAP bind (see the comment in `AuthService.java` for what a real LDAP integration would touch).
+
 ## Overview
 Веб-система управления задачами и контроля исполнительской дисциплины для ОАО «Государственная лизинговая компания» (GLK, Кыргызская Республика). Три уровня иерархии: Правление (3 члена) ставит задачи структурным подразделениям (СП); начальники СП декомпозируют задачи на подзадачи; изменение срока задачи проходит регламентированную трёхэтапную процедуру согласования с неизменяемым журналом аудита. Полное описание бизнес-логики — в приложенном ТЗ (не входит в этот пакет отдельным файлом, но полностью отражено в API-спецификации и в самом прототипе).
 
