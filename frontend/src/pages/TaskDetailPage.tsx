@@ -2,13 +2,14 @@ import { useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams } from "react-router-dom";
 import { AppShell } from "../components/AppShell";
-import { TaskStatusBadge, TransferStatusBadge } from "../components/StatusBadge";
+import { PriorityText, TaskStatusBadge, TransferStatusBadge } from "../components/StatusBadge";
 import { tasksApi } from "../api/tasks";
 import { subtasksApi } from "../api/subtasks";
 import { transferRequestsApi } from "../api/transferRequests";
 import { usersApi } from "../api/users";
 import { useAuth } from "../auth/AuthContext";
 import { ApiError } from "../api/client";
+import type { Priority } from "../api/types";
 
 const ACTIVE_TRANSFER_STATUSES = new Set(["draft", "pending", "revision"]);
 
@@ -74,7 +75,7 @@ export function TaskDetailPage() {
     (user?.role === "head" && user.departmentId === task.departmentId) ||
     (user?.role === "employee" && assigneeId === user.id);
 
-  const canEditAssignee = user?.role === "admin" || (user?.role === "board" && task.creatorId === user.id);
+  const canEditTaskDetails = user?.role === "admin" || (user?.role === "board" && task.creatorId === user.id);
 
   const canDecompose =
     user?.role === "admin" || user?.role === "board" || (user?.role === "head" && user.departmentId === task.departmentId);
@@ -104,10 +105,14 @@ export function TaskDetailPage() {
 
       <div className="card" style={{ marginBottom: 16 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
-          <div style={{ maxWidth: 640 }}>
-            <div style={{ fontSize: 19, fontWeight: 700, marginBottom: 8 }}>{task.title}</div>
-            <div style={{ fontSize: 13, color: "var(--color-text-secondary)" }}>{task.description}</div>
-          </div>
+          <TaskDetailsEditor
+            taskId={task.id}
+            title={task.title}
+            description={task.description}
+            priority={task.priority}
+            canEdit={canEditTaskDetails}
+            onSaved={invalidateTask}
+          />
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <TaskStatusBadge status={task.status} />
             {canDeleteTask && (
@@ -134,7 +139,7 @@ export function TaskDetailPage() {
         <div style={{ borderTop: "1px solid var(--color-border)", paddingTop: 16, display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 12 }}>
           <Meta label="СП-исполнитель" value={task.departmentName} />
           <Meta label="Постановщик" value={task.creatorName} />
-          {canEditAssignee ? (
+          {canEditTaskDetails ? (
             <AssigneeEditor
               taskId={task.id}
               departmentId={task.departmentId}
@@ -260,6 +265,102 @@ export function TaskDetailPage() {
         </div>
       </div>
     </AppShell>
+  );
+}
+
+function TaskDetailsEditor({
+  taskId,
+  title,
+  description,
+  priority,
+  canEdit,
+  onSaved,
+}: {
+  taskId: string;
+  title: string;
+  description: string;
+  priority: Priority;
+  canEdit: boolean;
+  onSaved: () => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [titleInput, setTitleInput] = useState(title);
+  const [descriptionInput, setDescriptionInput] = useState(description);
+  const [priorityInput, setPriorityInput] = useState<Priority>(priority);
+  const [error, setError] = useState<string | null>(null);
+
+  const mutation = useMutation({
+    mutationFn: () =>
+      tasksApi.update(taskId, { title: titleInput, description: descriptionInput, priority: priorityInput }),
+    onSuccess: () => {
+      setEditing(false);
+      onSaved();
+    },
+    onError: (err) => setError(err instanceof ApiError ? err.message : "Не удалось сохранить изменения"),
+  });
+
+  if (!editing) {
+    return (
+      <div style={{ maxWidth: 640 }}>
+        <div style={{ fontSize: 19, fontWeight: 700, marginBottom: 8 }}>{title}</div>
+        <div style={{ fontSize: 13, color: "var(--color-text-secondary)", marginBottom: 8 }}>{description}</div>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 12 }}>
+          <span style={{ color: "var(--color-text-muted)" }}>
+            Приоритет: <PriorityText priority={priority} />
+          </span>
+          {canEdit && (
+            <button
+              type="button"
+              style={{ border: "none", background: "none", padding: 0, color: "var(--color-gold-dark)", fontSize: 12 }}
+              onClick={() => {
+                setTitleInput(title);
+                setDescriptionInput(description);
+                setPriorityInput(priority);
+                setEditing(true);
+              }}
+            >
+              Изменить
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ maxWidth: 640, width: "100%" }}>
+      <input
+        value={titleInput}
+        onChange={(e) => setTitleInput(e.target.value)}
+        required
+        style={{ width: "100%", marginBottom: 8, fontSize: 15, fontWeight: 700 }}
+      />
+      <textarea
+        value={descriptionInput}
+        onChange={(e) => setDescriptionInput(e.target.value)}
+        rows={2}
+        style={{ width: "100%", marginBottom: 8 }}
+      />
+      <select value={priorityInput} onChange={(e) => setPriorityInput(e.target.value as Priority)} style={{ marginBottom: 8 }}>
+        <option value="high">Высокий</option>
+        <option value="medium">Средний</option>
+        <option value="low">Низкий</option>
+      </select>
+      {error && <div style={{ color: "var(--priority-high)", fontSize: 12, marginBottom: 8 }}>{error}</div>}
+      <div style={{ display: "flex", gap: 8 }}>
+        <button type="button" className="btn-secondary" onClick={() => setEditing(false)}>
+          Отмена
+        </button>
+        <button
+          type="button"
+          className="btn-primary"
+          disabled={!titleInput.trim() || mutation.isPending}
+          onClick={() => mutation.mutate()}
+        >
+          Сохранить
+        </button>
+      </div>
+    </div>
   );
 }
 
