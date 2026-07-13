@@ -6,6 +6,7 @@ import { TaskStatusBadge, TransferStatusBadge } from "../components/StatusBadge"
 import { tasksApi } from "../api/tasks";
 import { subtasksApi } from "../api/subtasks";
 import { transferRequestsApi } from "../api/transferRequests";
+import { usersApi } from "../api/users";
 import { useAuth } from "../auth/AuthContext";
 import { ApiError } from "../api/client";
 
@@ -57,6 +58,8 @@ export function TaskDetailPage() {
     (user?.role === "head" && user.departmentId === task.departmentId) ||
     (user?.role === "employee" && assigneeId === user.id);
 
+  const canEditAssignee = user?.role === "admin" || (user?.role === "board" && task.creatorId === user.id);
+
   const hasActiveTransfer = task.transferRequests.some((tr) => ACTIVE_TRANSFER_STATUSES.has(tr.status));
   const canRequestTransfer =
     task.status !== "done" &&
@@ -87,7 +90,16 @@ export function TaskDetailPage() {
         <div style={{ borderTop: "1px solid var(--color-border)", paddingTop: 16, display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 12 }}>
           <Meta label="СП-исполнитель" value={task.departmentName} />
           <Meta label="Постановщик" value={task.creatorName} />
-          <Meta label="Ответственный" value={task.assigneeName ?? "—"} />
+          {canEditAssignee ? (
+            <AssigneeEditor
+              taskId={task.id}
+              departmentId={task.departmentId}
+              currentAssigneeName={task.assigneeName}
+              onSaved={invalidateTask}
+            />
+          ) : (
+            <Meta label="Ответственный" value={task.assigneeName ?? "—"} />
+          )}
           <Meta label="Первоначальный срок" value={task.initialDeadline} />
           <Meta label="Текущий срок" value={task.currentDeadline} />
         </div>
@@ -171,6 +183,83 @@ export function TaskDetailPage() {
         </div>
       </div>
     </AppShell>
+  );
+}
+
+function AssigneeEditor({
+  taskId,
+  departmentId,
+  currentAssigneeName,
+  onSaved,
+}: {
+  taskId: string;
+  departmentId: string;
+  currentAssigneeName: string | null;
+  onSaved: () => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [assigneeId, setAssigneeId] = useState("");
+  const [error, setError] = useState<string | null>(null);
+
+  const usersQuery = useQuery({
+    queryKey: ["users", { departmentId }],
+    queryFn: () => usersApi.list({ departmentId }),
+    enabled: editing,
+  });
+  const options = (usersQuery.data ?? []).filter((u) => u.role === "head" || u.role === "employee");
+
+  const mutation = useMutation({
+    mutationFn: () => tasksApi.update(taskId, { assigneeId }),
+    onSuccess: () => {
+      setEditing(false);
+      onSaved();
+    },
+    onError: (err) => setError(err instanceof ApiError ? err.message : "Не удалось изменить ответственного"),
+  });
+
+  if (!editing) {
+    return (
+      <div>
+        <div style={{ fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", marginBottom: 4, textTransform: "uppercase" }}>
+          Ответственный
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <span style={{ fontSize: 13, fontWeight: 600 }}>{currentAssigneeName ?? "—"}</span>
+          <button
+            className="btn-secondary"
+            style={{ border: "none", background: "none", padding: 0, color: "var(--color-gold-dark)", fontSize: 12 }}
+            onClick={() => setEditing(true)}
+          >
+            Изменить
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <div style={{ fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", marginBottom: 4, textTransform: "uppercase" }}>
+        Ответственный
+      </div>
+      <select value={assigneeId} onChange={(e) => setAssigneeId(e.target.value)} style={{ width: "100%", marginBottom: 6 }}>
+        <option value="">Выберите...</option>
+        {options.map((u) => (
+          <option key={u.id} value={u.id}>
+            {u.fullName}
+          </option>
+        ))}
+      </select>
+      {error && <div style={{ color: "var(--priority-high)", fontSize: 12, marginBottom: 6 }}>{error}</div>}
+      <div style={{ display: "flex", gap: 8 }}>
+        <button type="button" className="btn-secondary" onClick={() => setEditing(false)}>
+          Отмена
+        </button>
+        <button type="button" className="btn-primary" disabled={!assigneeId || mutation.isPending} onClick={() => mutation.mutate()}>
+          Сохранить
+        </button>
+      </div>
+    </div>
   );
 }
 

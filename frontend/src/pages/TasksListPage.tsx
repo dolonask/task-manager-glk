@@ -6,6 +6,7 @@ import { ProgressBar } from "../components/ProgressBar";
 import { PriorityText, TaskStatusBadge } from "../components/StatusBadge";
 import { tasksApi } from "../api/tasks";
 import { departmentsApi } from "../api/departments";
+import { usersApi } from "../api/users";
 import { useAuth } from "../auth/AuthContext";
 import type { Priority, TaskStatus } from "../api/types";
 import { ApiError } from "../api/client";
@@ -151,9 +152,17 @@ function CreateTaskForm({
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [deptId, setDeptId] = useState(departments[0]?.id ?? "");
+  const [assigneeId, setAssigneeId] = useState("");
   const [priority, setPriority] = useState<Priority>("medium");
   const [deadline, setDeadline] = useState("");
   const [error, setError] = useState<string | null>(null);
+
+  const departmentUsersQuery = useQuery({
+    queryKey: ["users", { departmentId: deptId }],
+    queryFn: () => usersApi.list({ departmentId: deptId }),
+    enabled: !!deptId,
+  });
+  const assigneeOptions = (departmentUsersQuery.data ?? []).filter((u) => u.role === "head" || u.role === "employee");
 
   const createMutation = useMutation({
     mutationFn: () =>
@@ -161,6 +170,7 @@ function CreateTaskForm({
         title,
         description: description || undefined,
         departmentId: deptId,
+        assigneeId: assigneeId || undefined,
         priority,
         initialDeadline: deadline,
       }),
@@ -191,11 +201,26 @@ function CreateTaskForm({
           rows={2}
           style={{ gridColumn: "1 / -1" }}
         />
-        <select value={deptId} onChange={(e) => setDeptId(e.target.value)} required>
+        <select
+          value={deptId}
+          onChange={(e) => {
+            setDeptId(e.target.value);
+            setAssigneeId("");
+          }}
+          required
+        >
           <option value="">Выберите СП</option>
           {departments.map((d) => (
             <option key={d.id} value={d.id}>
               {d.name}
+            </option>
+          ))}
+        </select>
+        <select value={assigneeId} onChange={(e) => setAssigneeId(e.target.value)} disabled={!deptId}>
+          <option value="">Ответственный — по умолчанию (начальник СП)</option>
+          {assigneeOptions.map((u) => (
+            <option key={u.id} value={u.id}>
+              {u.fullName}
             </option>
           ))}
         </select>

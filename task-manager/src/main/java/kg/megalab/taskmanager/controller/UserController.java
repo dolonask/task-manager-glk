@@ -21,7 +21,6 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/users")
-@PreAuthorize("hasRole('ADMIN')")
 public class UserController {
 
     private final UserService userService;
@@ -30,7 +29,9 @@ public class UserController {
         this.userService = userService;
     }
 
+    /** Readable by admin/board/head — they need to pick assignees for tasks and subtasks. */
     @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'BOARD', 'HEAD')")
     public List<UserResponse> list(@RequestParam(required = false) String role,
                                     @RequestParam(required = false) UUID departmentId,
                                     @RequestParam(required = false) Boolean isActive) {
@@ -38,16 +39,19 @@ public class UserController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'BOARD', 'HEAD')")
     public UserResponse get(@PathVariable UUID id) {
         return userService.get(id);
     }
 
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public UserResponse create(@Valid @RequestBody CreateUserRequest request) {
         return userService.create(request);
     }
 
     @PatchMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public UserResponse update(@PathVariable UUID id, @RequestBody UpdateUserRequest request) {
         return userService.update(id, request);
     }
