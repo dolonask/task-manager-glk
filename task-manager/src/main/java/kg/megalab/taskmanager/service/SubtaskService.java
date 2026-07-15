@@ -103,7 +103,10 @@ public class SubtaskService {
 
     public void delete(UUID id) {
         Subtask subtask = findOrThrow(id);
-        assertDecomposeAccess(subtask.getTask());
+        UserPrincipal principal = SecurityUtils.currentUser();
+        if (principal.role() != Role.ADMIN && principal.role() != Role.BOARD) {
+            throw new ForbiddenException("Нет прав на удаление подзадачи");
+        }
         auditLogService.record("Subtask", subtask.getId(), "subtask.delete", toResponse(subtask), null);
         subtaskRepository.delete(subtask);
     }

@@ -45,7 +45,7 @@ public class SubtaskController {
     }
 
     @DeleteMapping("/subtasks/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'HEAD')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'BOARD')")
     public void delete(@PathVariable UUID id) {
         subtaskService.delete(id);
     }

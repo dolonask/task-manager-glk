@@ -80,10 +80,10 @@ export function TaskDetailPage() {
   const canDecompose =
     user?.role === "admin" || user?.role === "board" || (user?.role === "head" && user.departmentId === task.departmentId);
 
-  const canDeleteSubtask = user?.role === "admin" || (user?.role === "head" && user.departmentId === task.departmentId);
+  const canDeleteSubtask = user?.role === "admin" || user?.role === "board";
 
   const hasActiveTransfer = task.transferRequests.some((tr) => ACTIVE_TRANSFER_STATUSES.has(tr.status));
-  const canDeleteTask = user?.role === "admin";
+  const canDeleteTask = user?.role === "admin" || user?.role === "board";
   const deleteTaskAllowed = task.status === "new" && !hasActiveTransfer;
   const canRequestTransfer =
     task.status !== "done" &&

@@ -57,7 +57,7 @@ public class TaskController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'BOARD')")
     public void delete(@PathVariable UUID id) {
         taskService.delete(id);
     }
