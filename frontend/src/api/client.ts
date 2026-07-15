@@ -106,6 +106,51 @@ async function apiRequest<T>(path: string, options: RequestInit = {}): Promise<T
   return (text ? JSON.parse(text) : undefined) as T;
 }
 
+async function apiDownload(path: string): Promise<{ blob: Blob; filename: string | null }> {
+  let res = await doFetch(path, { method: "GET" }, config.getAccessToken());
+
+  if (res.status === 401 && config.getRefreshToken()) {
+    const newToken = await refreshAccessToken();
+    if (newToken) {
+      res = await doFetch(path, { method: "GET" }, newToken);
+    } else {
+      config.onAuthExpired();
+    }
+  } else if (res.status === 401) {
+    config.onAuthExpired();
+  }
+
+  if (!res.ok) {
+    let body: ApiErrorBody | null = null;
+    try {
+      body = await res.json();
+    } catch {
+      // no JSON body
+    }
+    throw new ApiError(
+      res.status,
+      body?.error?.code ?? "UNKNOWN",
+      body?.error?.message ?? res.statusText,
+      body?.error?.field,
+    );
+  }
+
+  const disposition = res.headers.get("Content-Disposition");
+  const match = disposition?.match(/filename="?([^";]+)"?/);
+  return { blob: await res.blob(), filename: match ? match[1] : null };
+}
+
+export function triggerBrowserDownload(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
 export function buildQuery(params: Record<string, string | number | boolean | undefined | null>): string {
   const sp = new URLSearchParams();
   for (const [key, value] of Object.entries(params)) {
@@ -124,4 +169,5 @@ export const api = {
   patch: <T>(path: string, body?: unknown) =>
     apiRequest<T>(path, { method: "PATCH", body: body !== undefined ? JSON.stringify(body) : undefined }),
   delete: <T>(path: string) => apiRequest<T>(path, { method: "DELETE" }),
+  download: (path: string) => apiDownload(path),
 };

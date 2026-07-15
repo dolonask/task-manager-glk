@@ -1,14 +1,31 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { AppShell } from "../components/AppShell";
 import { KpiCard } from "../components/KpiCard";
 import { ProgressBar } from "../components/ProgressBar";
 import { TaskStatusBadge } from "../components/StatusBadge";
-import { analyticsApi } from "../api/analytics";
+import { analyticsApi, exportApi } from "../api/analytics";
 import { useAuth } from "../auth/AuthContext";
+import { ApiError } from "../api/client";
 
 export function AnalyticsPage() {
   const { user } = useAuth();
   const canSeeBoardAnalytics = user?.role === "admin" || user?.role === "board";
+  const canExport = user?.role === "admin" || user?.role === "board";
+  const [exporting, setExporting] = useState<"xlsx" | "pdf" | null>(null);
+  const [exportError, setExportError] = useState<string | null>(null);
+
+  const handleExport = async (format: "xlsx" | "pdf") => {
+    setExportError(null);
+    setExporting(format);
+    try {
+      await exportApi.analytics(format);
+    } catch (err) {
+      setExportError(err instanceof ApiError ? err.message : "Не удалось выполнить экспорт");
+    } finally {
+      setExporting(null);
+    }
+  };
 
   const summaryQuery = useQuery({ queryKey: ["analytics", "summary"], queryFn: () => analyticsApi.summary() });
   const departmentsQuery = useQuery({ queryKey: ["analytics", "departments"], queryFn: analyticsApi.departments });
@@ -112,12 +129,23 @@ export function AnalyticsPage() {
             </div>
           )}
 
+          {exportError && <div style={{ color: "var(--priority-high)", fontSize: 12, marginBottom: 8 }}>{exportError}</div>}
           <div style={{ display: "flex", gap: 8 }}>
-            <button className="btn-secondary" disabled title="Экспорт доступен после серверной реализации">
-              Экспорт XLSX
+            <button
+              className="btn-secondary"
+              disabled={!canExport || exporting !== null}
+              title={canExport ? undefined : "Доступно членам Правления и администратору"}
+              onClick={() => handleExport("xlsx")}
+            >
+              {exporting === "xlsx" ? "Экспорт..." : "Экспорт XLSX"}
             </button>
-            <button className="btn-secondary" disabled title="Экспорт доступен после серверной реализации">
-              Экспорт PDF
+            <button
+              className="btn-secondary"
+              disabled={!canExport || exporting !== null}
+              title={canExport ? undefined : "Доступно членам Правления и администратору"}
+              onClick={() => handleExport("pdf")}
+            >
+              {exporting === "pdf" ? "Экспорт..." : "Экспорт PDF"}
             </button>
           </div>
         </div>
