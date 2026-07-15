@@ -22,6 +22,9 @@ public class Subtask {
     @Column(nullable = false)
     private String title;
 
+    @Column(columnDefinition = "TEXT")
+    private String description;
+
     @ManyToOne
     private User assignee;
 
@@ -52,6 +55,14 @@ public class Subtask {
 
     public void setTitle(String title) {
         this.title = title;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 
     public User getAssignee() {

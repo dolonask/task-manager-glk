@@ -7,6 +7,7 @@ public record SubtaskResponse(
         UUID id,
         UUID taskId,
         String title,
+        String description,
         UUID assigneeId,
         String assigneeName,
         LocalDate deadline,

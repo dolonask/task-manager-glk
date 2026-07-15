@@ -75,6 +75,7 @@ export interface SubtaskResponse {
   id: string;
   taskId: string;
   title: string;
+  description: string | null;
   assigneeId: string | null;
   assigneeName: string | null;
   deadline: string;
@@ -83,12 +84,14 @@ export interface SubtaskResponse {
 
 export interface CreateSubtaskRequest {
   title: string;
+  description?: string;
   assigneeId?: string;
   deadline: string;
 }
 
 export interface UpdateSubtaskRequest {
   title?: string;
+  description?: string;
   assigneeId?: string;
   deadline?: string;
 }

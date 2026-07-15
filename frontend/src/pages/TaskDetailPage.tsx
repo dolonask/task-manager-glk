@@ -184,6 +184,9 @@ export function TaskDetailPage() {
                 <div style={{ textDecoration: s.done ? "line-through" : "none", color: s.done ? "var(--color-text-muted)" : "var(--color-text)" }}>
                   {s.title}
                 </div>
+                {s.description && (
+                  <div style={{ fontSize: 12, color: "var(--color-text-muted)", marginTop: 2 }}>{s.description}</div>
+                )}
               </div>
               <div style={{ fontSize: 12, color: "var(--color-text-muted)" }}>{s.assigneeName ?? "—"}</div>
               <div style={{ fontSize: 12, color: "var(--color-text-muted)" }}>{s.deadline}</div>
@@ -384,7 +387,7 @@ function AssigneeEditor({
     queryFn: () => usersApi.list({ departmentId }),
     enabled: editing,
   });
-  const options = (usersQuery.data ?? []).filter((u) => u.role === "head" || u.role === "employee");
+  const options = (usersQuery.data ?? []).filter((u) => u.role !== "board");
 
   const mutation = useMutation({
     mutationFn: () => tasksApi.update(taskId, { assigneeId }),
@@ -453,6 +456,7 @@ function AddSubtaskForm({
   onCreated: () => void;
 }) {
   const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
   const [assigneeId, setAssigneeId] = useState("");
   const [deadline, setDeadline] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -461,10 +465,16 @@ function AddSubtaskForm({
     queryKey: ["users", { departmentId }],
     queryFn: () => usersApi.list({ departmentId }),
   });
-  const options = (usersQuery.data ?? []).filter((u) => u.role === "head" || u.role === "employee");
+  const options = (usersQuery.data ?? []).filter((u) => u.role !== "board");
 
   const mutation = useMutation({
-    mutationFn: () => subtasksApi.create(taskId, { title, assigneeId: assigneeId || undefined, deadline }),
+    mutationFn: () =>
+      subtasksApi.create(taskId, {
+        title,
+        description: description || undefined,
+        assigneeId: assigneeId || undefined,
+        deadline,
+      }),
     onSuccess: onCreated,
     onError: (err) => setError(err instanceof ApiError ? err.message : "Не удалось добавить подзадачу"),
   });
@@ -480,6 +490,10 @@ function AddSubtaskForm({
       <div style={{ marginBottom: 10 }}>
         <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 6 }}>Название подзадачи</div>
         <input value={title} onChange={(e) => setTitle(e.target.value)} required style={{ width: "100%" }} />
+      </div>
+      <div style={{ marginBottom: 10 }}>
+        <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 6 }}>Описание</div>
+        <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={2} style={{ width: "100%" }} />
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
         <div>

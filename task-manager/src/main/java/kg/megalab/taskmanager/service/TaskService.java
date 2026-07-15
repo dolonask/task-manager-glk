@@ -246,7 +246,7 @@ public class TaskService {
 
     TaskDetailResponse toDetail(Task task) {
         List<SubtaskResponse> subtasks = task.getSubtasks().stream()
-                .map(s -> new SubtaskResponse(s.getId(), task.getId(), s.getTitle(),
+                .map(s -> new SubtaskResponse(s.getId(), task.getId(), s.getTitle(), s.getDescription(),
                         s.getAssignee() != null ? s.getAssignee().getId() : null,
                         s.getAssignee() != null ? s.getAssignee().getFullName() : null,
                         s.getDeadline(), s.isDone()))

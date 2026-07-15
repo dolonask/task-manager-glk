@@ -50,6 +50,7 @@ public class SubtaskService {
         Subtask subtask = new Subtask();
         subtask.setTask(task);
         subtask.setTitle(request.title());
+        subtask.setDescription(request.description());
         subtask.setDeadline(request.deadline());
         if (request.assigneeId() != null) {
             subtask.setAssignee(userRepository.findById(request.assigneeId())
@@ -67,6 +68,9 @@ public class SubtaskService {
         SubtaskResponse before = toResponse(subtask);
         if (request.title() != null) {
             subtask.setTitle(request.title());
+        }
+        if (request.description() != null) {
+            subtask.setDescription(request.description());
         }
         if (request.deadline() != null) {
             subtask.setDeadline(request.deadline());
@@ -110,7 +114,7 @@ public class SubtaskService {
 
     private SubtaskResponse toResponse(Subtask subtask) {
         return new SubtaskResponse(
-                subtask.getId(), subtask.getTask().getId(), subtask.getTitle(),
+                subtask.getId(), subtask.getTask().getId(), subtask.getTitle(), subtask.getDescription(),
                 subtask.getAssignee() != null ? subtask.getAssignee().getId() : null,
                 subtask.getAssignee() != null ? subtask.getAssignee().getFullName() : null,
                 subtask.getDeadline(), subtask.isDone()
