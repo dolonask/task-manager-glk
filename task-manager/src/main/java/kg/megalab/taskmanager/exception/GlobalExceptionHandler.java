@@ -5,6 +5,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -54,6 +55,12 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleUnreadable(HttpMessageNotReadableException ex) {
         return ResponseEntity.status(ErrorCode.VALIDATION_ERROR.httpStatus())
                 .body(ErrorResponse.of(ErrorCode.VALIDATION_ERROR, "Некорректное тело запроса", null));
+    }
+
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    public ResponseEntity<ErrorResponse> handleMethodNotSupported(HttpRequestMethodNotSupportedException ex) {
+        return ResponseEntity.status(ErrorCode.METHOD_NOT_ALLOWED.httpStatus())
+                .body(ErrorResponse.of(ErrorCode.METHOD_NOT_ALLOWED, "Метод " + ex.getMethod() + " не поддерживается для этого адреса", null));
     }
 
     @ExceptionHandler(Exception.class)
