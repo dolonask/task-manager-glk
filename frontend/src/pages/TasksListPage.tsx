@@ -162,7 +162,7 @@ function CreateTaskForm({
     queryFn: () => usersApi.list({ departmentId: deptId }),
     enabled: !!deptId,
   });
-  const assigneeOptions = (departmentUsersQuery.data ?? []).filter((u) => u.role === "head" || u.role === "employee");
+  const assigneeOptions = (departmentUsersQuery.data ?? []).filter((u) => u.role !== "board");
 
   const createMutation = useMutation({
     mutationFn: () =>
