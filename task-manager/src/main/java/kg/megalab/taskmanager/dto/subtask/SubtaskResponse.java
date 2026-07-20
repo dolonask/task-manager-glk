@@ -11,6 +11,7 @@ public record SubtaskResponse(
         UUID assigneeId,
         String assigneeName,
         LocalDate deadline,
-        boolean done
+        boolean done,
+        String doneComment
 ) {
 }

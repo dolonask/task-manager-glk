@@ -234,6 +234,13 @@
                     <div style="{{ selectedTask.badgeStyle }}">{{ selectedTask.status }}</div>
                   </div>
 
+                  <sc-if value="{{ selectedTask.closeComment }}" hint-placeholder-val="{{ false }}">
+                    <div style="margin-top:16px;font-size:13px;color:#4A4232;background:#FAF8F4;border:1px solid #E8E2D6;border-radius:5px;padding:12px 14px;">
+                      <div style="font-size:11px;color:#8A8074;font-weight:700;margin-bottom:4px;">ИТОГ ВЫПОЛНЕНИЯ</div>
+                      {{ selectedTask.closeComment }}
+                    </div>
+                  </sc-if>
+
                   <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:16px;margin-top:24px;padding-top:20px;border-top:1px solid #F0ECE3;">
                     <div><div style="font-size:11px;color:#8A8074;font-weight:700;margin-bottom:5px;">СП-ИСПОЛНИТЕЛЬ</div><div style="font-size:13px;font-weight:600;">{{ selectedTask.deptName }}</div></div>
                     <div><div style="font-size:11px;color:#8A8074;font-weight:700;margin-bottom:5px;">ПОСТАНОВЩИК</div><div style="font-size:13px;font-weight:600;">{{ selectedTask.creatorName }}</div></div>
@@ -250,11 +257,25 @@
                       <div style="font-size:12px;color:#8A8074;">{{ selectedTask.progressLabel }}</div>
                     </div>
                     <sc-for list="{{ selectedTask.subtasks }}" as="s" hint-placeholder-count="3">
-                      <div style="display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid #F0ECE3;">
-                        <input type="checkbox" checked="{{ s.done }}" onChange="{{ s.onToggle }}" disabled="{{ s.disabled }}" style="width:17px;height:17px;accent-color:#2A241C;cursor:pointer;" />
-                        <div style="{{ s.textStyle }}">{{ s.title }}</div>
-                        <div style="font-size:12px;color:#8A8074;">{{ s.assigneeName }}</div>
-                        <div style="font-size:12px;color:#8A8074;">{{ s.deadlineLabel }}</div>
+                      <div style="padding:11px 0;border-bottom:1px solid #F0ECE3;">
+                        <div style="display:flex;align-items:center;gap:12px;">
+                          <input type="checkbox" checked="{{ s.done }}" onChange="{{ s.onToggle }}" disabled="{{ s.disabled }}" style="width:17px;height:17px;accent-color:#2A241C;cursor:pointer;" />
+                          <div style="{{ s.textStyle }}">{{ s.title }}</div>
+                          <div style="font-size:12px;color:#8A8074;">{{ s.assigneeName }}</div>
+                          <div style="font-size:12px;color:#8A8074;">{{ s.deadlineLabel }}</div>
+                        </div>
+                        <sc-if value="{{ s.doneComment }}" hint-placeholder-val="{{ false }}">
+                          <div style="margin:8px 0 0 29px;font-size:12px;color:#6B6153;background:#FAF8F4;border:1px solid #E8E2D6;border-radius:5px;padding:8px 10px;">{{ s.doneComment }}</div>
+                        </sc-if>
+                        <sc-if value="{{ s.isPending }}" hint-placeholder-val="{{ false }}">
+                          <div style="margin:10px 0 0 29px;">
+                            <textarea value="{{ s.pendingComment }}" onChange="{{ s.onCommentChange }}" placeholder="Итог выполнения подзадачи (обязательно)" style="width:100%;padding:9px 12px;border:1px solid #E8E2D6;border-radius:5px;font-size:13px;min-height:60px;resize:vertical;margin-bottom:8px;"></textarea>
+                            <div style="display:flex;gap:8px;">
+                              <button onClick="{{ s.onCancelDone }}" style="padding:7px 12px;background:#fff;border:1px solid #E8E2D6;border-radius:5px;font-size:12px;cursor:pointer;">Отмена</button>
+                              <button onClick="{{ s.onConfirmDone }}" style="padding:7px 12px;background:#2A241C;color:#fff;border:none;border-radius:5px;font-size:12px;font-weight:700;cursor:pointer;">Сохранить</button>
+                            </div>
+                          </div>
+                        </sc-if>
                       </div>
                     </sc-for>
 
@@ -277,6 +298,25 @@
                             <div style="display:flex;gap:10px;justify-content:flex-end;">
                               <button onClick="{{ onCancelTransferForm }}" style="padding:9px 16px;background:#fff;border:1px solid #E8E2D6;border-radius:5px;font-size:13px;cursor:pointer;">Отмена</button>
                               <button onClick="{{ onSubmitTransfer }}" style="padding:9px 16px;background:#2A241C;color:#fff;border:none;border-radius:5px;font-size:13px;font-weight:700;cursor:pointer;">Отправить на согласование</button>
+                            </div>
+                          </div>
+                        </sc-if>
+                      </div>
+                    </sc-if>
+
+                    <sc-if value="{{ selectedTask.canCloseTask }}" hint-placeholder-val="{{ false }}">
+                      <div style="margin-top:18px;padding-top:18px;border-top:1px solid #F0ECE3;">
+                        <sc-if value="{{ !selectedTask.showCloseTaskForm }}" hint-placeholder-val="{{ true }}">
+                          <button onClick="{{ selectedTask.onOpenCloseTaskForm }}" style="padding:9px 16px;background:#2A241C;color:#fff;border:none;border-radius:5px;font-size:13px;font-weight:700;cursor:pointer;">Закрыть задачу</button>
+                        </sc-if>
+                        <sc-if value="{{ selectedTask.showCloseTaskForm }}" hint-placeholder-val="{{ false }}">
+                          <div>
+                            <div style="font-size:13px;font-weight:700;margin-bottom:10px;">Закрытие задачи</div>
+                            <div style="font-size:12px;color:#8A8074;margin-bottom:6px;">Итог выполнения (мини-отчёт)</div>
+                            <textarea value="{{ selectedTask.closeCommentDraft }}" onChange="{{ selectedTask.onCloseCommentChange }}" placeholder="Что стало итогом выполнения задачи" style="width:100%;padding:10px 12px;border:1px solid #E8E2D6;border-radius:5px;font-size:13px;min-height:70px;resize:vertical;margin-bottom:12px;"></textarea>
+                            <div style="display:flex;gap:10px;justify-content:flex-end;">
+                              <button onClick="{{ selectedTask.onCancelCloseTaskForm }}" style="padding:9px 16px;background:#fff;border:1px solid #E8E2D6;border-radius:5px;font-size:13px;cursor:pointer;">Отмена</button>
+                              <button onClick="{{ selectedTask.onSubmitCloseTask }}" style="padding:9px 16px;background:#2A241C;color:#fff;border:none;border-radius:5px;font-size:13px;font-weight:700;cursor:pointer;">Закрыть задачу</button>
                             </div>
                           </div>
                         </sc-if>
@@ -560,7 +600,7 @@ function priorityMeta(p) {
 
 function computeStatus(task) {
   const allDone = task.subtasks.length > 0 && task.subtasks.every(s => s.done);
-  if (allDone) return 'Выполнено';
+  if (task.closedAt || allDone) return 'Выполнено';
   if (task.currentDeadline < TODAY) return 'Просрочено';
   const anyProgress = task.subtasks.some(s => s.done);
   if (anyProgress) return 'В работе';
@@ -706,6 +746,10 @@ class Component extends DCLogic {
       showTaskForm: false,
       showTransferForm: false,
       showUserForm: false,
+      showCloseTaskForm: false,
+      closeComment: '',
+      pendingSubtaskId: null,
+      subtaskDoneComment: '',
       requestFilter: 'all',
       taskFilters: { status: 'all', dept: 'all', priority: 'all', q: '' },
       newTask: { title: '', description: '', deptId: data.departments[0].id, priority: 'высокий', deadline: '2026-08-01' },
@@ -738,8 +782,8 @@ class Component extends DCLogic {
   onRoleSwitch = (e) => this.setState({ currentUserId: e.target.value, screen: 'dashboard', selectedTaskId: null });
 
   goScreen = (screen) => this.setState({ screen, selectedTaskId: null, showTaskForm: false });
-  onBackToTasks = () => this.setState({ screen: 'tasks', selectedTaskId: null, showTransferForm: false });
-  openTask = (id) => this.setState({ screen: 'task-detail', selectedTaskId: id, showTransferForm: false });
+  onBackToTasks = () => this.setState({ screen: 'tasks', selectedTaskId: null, showTransferForm: false, showCloseTaskForm: false, pendingSubtaskId: null });
+  openTask = (id) => this.setState({ screen: 'task-detail', selectedTaskId: id, showTransferForm: false, showCloseTaskForm: false, pendingSubtaskId: null });
 
   onFilterQ = (e) => this.setState(s => ({ taskFilters: { ...s.taskFilters, q: e.target.value } }));
   onFilterStatus = (e) => this.setState(s => ({ taskFilters: { ...s.taskFilters, status: e.target.value } }));
@@ -780,15 +824,52 @@ class Component extends DCLogic {
   };
 
   toggleSubtask = (taskId, subtaskId) => () => {
-    this.setState(s => ({
-      tasks: s.tasks.map(t => t.id !== taskId ? t : {
-        ...t,
-        subtasks: t.subtasks.map(st => st.id !== subtaskId ? st : { ...st, done: !st.done })
-      })
-    }));
     const t = this.taskById(taskId);
     const st = t.subtasks.find(x => x.id === subtaskId);
-    this.addAudit(this.state.currentUserId, st.done ? 'Снята отметка выполнения подзадачи' : 'Отмечена подзадача выполненной', st.title);
+    if (st.done) {
+      this.setState(s => ({
+        tasks: s.tasks.map(tt => tt.id !== taskId ? tt : {
+          ...tt,
+          subtasks: tt.subtasks.map(ss => ss.id !== subtaskId ? ss : { ...ss, done: false, doneComment: null })
+        })
+      }));
+      this.addAudit(this.state.currentUserId, 'Снята отметка выполнения подзадачи', st.title);
+    } else {
+      this.setState({ pendingSubtaskId: subtaskId, subtaskDoneComment: '' });
+    }
+  };
+
+  onSubtaskDoneCommentChange = (e) => this.setState({ subtaskDoneComment: e.target.value });
+  onCancelSubtaskDone = () => this.setState({ pendingSubtaskId: null, subtaskDoneComment: '' });
+
+  onConfirmSubtaskDone = (taskId) => () => {
+    const s = this.state;
+    if (!s.subtaskDoneComment.trim()) return;
+    const t = this.taskById(taskId);
+    const st = t.subtasks.find(x => x.id === s.pendingSubtaskId);
+    this.setState(st2 => ({
+      tasks: st2.tasks.map(tt => tt.id !== taskId ? tt : {
+        ...tt,
+        subtasks: tt.subtasks.map(ss => ss.id !== s.pendingSubtaskId ? ss : { ...ss, done: true, doneComment: s.subtaskDoneComment })
+      }),
+      pendingSubtaskId: null, subtaskDoneComment: ''
+    }));
+    this.addAudit(s.currentUserId, 'Отмечена подзадача выполненной', st.title);
+  };
+
+  onOpenCloseTaskForm = () => this.setState({ showCloseTaskForm: true, closeComment: '' });
+  onCancelCloseTaskForm = () => this.setState({ showCloseTaskForm: false, closeComment: '' });
+  onCloseCommentChange = (e) => this.setState({ closeComment: e.target.value });
+
+  onSubmitCloseTask = (taskId) => () => {
+    const s = this.state;
+    if (!s.closeComment.trim()) return;
+    this.setState(st => ({
+      tasks: st.tasks.map(t => t.id !== taskId ? t : { ...t, closedAt: TODAY, closeComment: s.closeComment }),
+      showCloseTaskForm: false, closeComment: ''
+    }));
+    const t = this.taskById(taskId);
+    this.addAudit(s.currentUserId, 'Задача закрыта', t.title);
   };
 
   onOpenTransferForm = () => this.setState({ showTransferForm: true, newTransfer: { proposedDate: '', justification: '' } });
@@ -955,6 +1036,8 @@ class Component extends DCLogic {
           decisionReason: r.decisionReason
         }));
         const selMeta = statusMeta(status);
+        const canCloseTask = status !== 'Выполнено'
+            && (role === 'admin' || (role === 'head' && currentUser.deptId === t.deptId));
         selectedTask = {
           id: t.id, title: t.title, description: t.description, status,
           badgeStyle: 'display:inline-block;font-size:12px;font-weight:700;padding:6px 14px;border-radius:20px;flex-shrink:0;background:' + selMeta.bg + ';color:' + selMeta.color + ';',
@@ -965,10 +1048,24 @@ class Component extends DCLogic {
             title: st.title, assigneeName: this.userName(st.assigneeId), deadlineLabel: fmtDate(st.deadline),
             done: st.done, disabled: !canToggle,
             textStyle: 'flex:1;font-size:13px;' + (st.done ? 'text-decoration:line-through;color:#A79B8A;' : ''),
-            onToggle: this.toggleSubtask(t.id, st.id)
+            doneComment: st.doneComment,
+            isPending: s.pendingSubtaskId === st.id,
+            pendingComment: s.subtaskDoneComment,
+            onToggle: this.toggleSubtask(t.id, st.id),
+            onCommentChange: this.onSubtaskDoneCommentChange,
+            onCancelDone: this.onCancelSubtaskDone,
+            onConfirmDone: this.onConfirmSubtaskDone(t.id)
           })),
           canRequestTransfer: canCreateRequestRole && status !== 'Выполнено' && !hasActiveRequest,
-          requestsHistory: reqHistory, noHistory: reqHistory.length === 0
+          requestsHistory: reqHistory, noHistory: reqHistory.length === 0,
+          closeComment: t.closeComment,
+          canCloseTask,
+          showCloseTaskForm: s.showCloseTaskForm,
+          closeCommentDraft: s.closeComment,
+          onOpenCloseTaskForm: this.onOpenCloseTaskForm,
+          onCancelCloseTaskForm: this.onCancelCloseTaskForm,
+          onCloseCommentChange: this.onCloseCommentChange,
+          onSubmitCloseTask: this.onSubmitCloseTask(t.id)
         };
       }
     }

@@ -25,6 +25,7 @@ public record TaskDetailResponse(
         double progress,
         Instant createdAt,
         Instant closedAt,
+        String closeComment,
         List<SubtaskResponse> subtasks,
         List<TransferRequestResponse> transferRequests
 ) {

@@ -33,6 +33,10 @@ public class Subtask {
     @Column(nullable = false)
     private boolean done = false;
 
+    /** Mini-report of the outcome, required when marking the subtask done via PATCH /subtasks/{id}/toggle. */
+    @Column(columnDefinition = "TEXT")
+    private String doneComment;
+
     public UUID getId() {
         return id;
     }
@@ -87,5 +91,13 @@ public class Subtask {
 
     public void setDone(boolean done) {
         this.done = done;
+    }
+
+    public String getDoneComment() {
+        return doneComment;
+    }
+
+    public void setDoneComment(String doneComment) {
+        this.doneComment = doneComment;
     }
 }

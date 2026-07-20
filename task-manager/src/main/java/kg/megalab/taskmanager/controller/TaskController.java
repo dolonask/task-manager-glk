@@ -1,6 +1,7 @@
 package kg.megalab.taskmanager.controller;
 
 import jakarta.validation.Valid;
+import kg.megalab.taskmanager.dto.task.CloseTaskRequest;
 import kg.megalab.taskmanager.dto.task.CreateTaskRequest;
 import kg.megalab.taskmanager.dto.task.TaskDetailResponse;
 import kg.megalab.taskmanager.dto.task.TaskListItemResponse;
@@ -64,7 +65,7 @@ public class TaskController {
 
     @PatchMapping("/{id}/close")
     @PreAuthorize("hasAnyRole('ADMIN', 'HEAD')")
-    public TaskDetailResponse close(@PathVariable UUID id) {
-        return taskService.close(id);
+    public TaskDetailResponse close(@PathVariable UUID id, @Valid @RequestBody CloseTaskRequest request) {
+        return taskService.close(id, request);
     }
 }

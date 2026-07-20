@@ -56,6 +56,10 @@ public class Task {
     /** Set when explicitly closed via PATCH /tasks/{id}/close, or implicitly when all subtasks are done. */
     private Instant closedAt;
 
+    /** Mini-report of the outcome, required when explicitly closing via PATCH /tasks/{id}/close. */
+    @Column(length = 4000)
+    private String closeComment;
+
     @OneToMany(mappedBy = "task", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @OrderBy("deadline ASC")
     private List<Subtask> subtasks = new ArrayList<>();
@@ -146,6 +150,14 @@ public class Task {
 
     public void setClosedAt(Instant closedAt) {
         this.closedAt = closedAt;
+    }
+
+    public String getCloseComment() {
+        return closeComment;
+    }
+
+    public void setCloseComment(String closeComment) {
+        this.closeComment = closeComment;
     }
 
     public List<Subtask> getSubtasks() {

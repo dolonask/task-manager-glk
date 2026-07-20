@@ -152,6 +152,7 @@
     <tr><td><code>currentDeadline</code></td><td>date</td><td>Текущий срок (меняется только через регламент, разд. 6)</td></tr>
     <tr><td><code>status</code></td><td>enum, вычисляемое</td><td><code>new</code> · <code>in_progress</code> · <code>done</code> · <code>overdue</code> — рассчитывается сервером, не задаётся напрямую</td></tr>
     <tr><td><code>createdAt</code>, <code>closedAt</code></td><td>datetime</td><td>Служебные отметки</td></tr>
+    <tr><td><code>closeComment</code></td><td>string?</td><td>Мини-отчёт об итоге выполнения — обязателен в теле <code>PATCH /tasks/{id}/close</code>, пусто, если задача ещё не закрыта явно</td></tr>
   </table>
 
   <h3>4.4. Subtask (Подзадача)</h3>
@@ -162,6 +163,7 @@
     <tr><td><code>assigneeId</code></td><td>UUID</td><td>Ответственный исполнитель</td></tr>
     <tr><td><code>deadline</code></td><td>date</td><td>Срок подзадачи</td></tr>
     <tr><td><code>done</code></td><td>boolean</td><td>Признак выполнения</td></tr>
+    <tr><td><code>doneComment</code></td><td>string?</td><td>Мини-отчёт об итоге выполнения — обязателен в теле <code>PATCH /subtasks/{id}/toggle</code>, когда подзадача отмечается выполненной; очищается при снятии отметки</td></tr>
   </table>
 
   <h3>4.5. TransferRequest (Заявка на перенос срока)</h3>
@@ -212,7 +214,7 @@
     <tr><td><span class="tag post">POST</span><code>/tasks</code></td><td>Создание задачи. Тело: <code>title, description, departmentId, assigneeId?, priority, initialDeadline</code>. Сервер фиксирует <code>currentDeadline = initialDeadline</code></td><td><code>admin</code>, <code>board</code></td></tr>
     <tr><td><span class="tag patch">PATCH</span><code>/tasks/{id}</code></td><td>Изменение названия/описания/приоритета/ответственного. <b>Поле <code>currentDeadline</code> недоступно для прямого изменения</b> — возвращает 422</td><td><code>admin</code>, <code>board</code>-постановщик</td></tr>
     <tr><td><span class="tag delete">DELETE</span><code>/tasks/{id}</code></td><td>Удаление задачи (только в статусе <code>new</code>, без активных заявок)</td><td><code>admin</code></td></tr>
-    <tr><td><span class="tag patch">PATCH</span><code>/tasks/{id}/close</code></td><td>Явная отметка задачи выполненной (если не все подзадачи закрыты)</td><td><code>admin</code>, <code>head</code> курируемого СП</td></tr>
+    <tr><td><span class="tag patch">PATCH</span><code>/tasks/{id}/close</code></td><td>Явная отметка задачи выполненной (если не все подзадачи закрыты). Тело: <code>comment</code> (обязателен) — мини-отчёт об итоге выполнения</td><td><code>admin</code>, <code>head</code> курируемого СП</td></tr>
   </table>
   <div class="note">Просмотр: <code>admin</code> и <code>board</code> видят все задачи; <code>head</code>/<code>employee</code> — только задачи своего СП (<code>departmentId</code> = <code>user.departmentId</code>); <code>observer</code> — все задачи, только чтение.</div>
 
@@ -221,7 +223,7 @@
     <tr><th style="width:230px;">Метод и путь</th><th>Описание</th><th style="width:150px;">Доступ</th></tr>
     <tr><td><span class="tag post">POST</span><code>/tasks/{id}/subtasks</code></td><td>Декомпозиция задачи: создание подзадачи (<code>title, assigneeId, deadline</code>)</td><td><code>admin</code>, <code>board</code>, <code>head</code> своего СП</td></tr>
     <tr><td><span class="tag patch">PATCH</span><code>/subtasks/{id}</code></td><td>Редактирование подзадачи</td><td><code>admin</code>, <code>head</code> своего СП</td></tr>
-    <tr><td><span class="tag patch">PATCH</span><code>/subtasks/{id}/toggle</code></td><td>Отметка выполнения/снятие отметки. Пересчитывает статус и прогресс родительской задачи</td><td><code>admin</code>, <code>head</code>, <code>employee</code> — ответственный по подзадаче</td></tr>
+    <tr><td><span class="tag patch">PATCH</span><code>/subtasks/{id}/toggle</code></td><td>Отметка выполнения/снятие отметки. Тело: <code>comment</code> — обязателен при отметке выполненной (мини-отчёт об итоге), не требуется при снятии отметки. Пересчитывает статус и прогресс родительской задачи</td><td><code>admin</code>, <code>head</code>, <code>employee</code> — ответственный по подзадаче</td></tr>
     <tr><td><span class="tag delete">DELETE</span><code>/subtasks/{id}</code></td><td>Удаление подзадачи</td><td><code>admin</code>, <code>head</code> своего СП</td></tr>
   </table>
   <p>Статус задачи (<code>status</code>) всегда вычисляется сервером по правилам: <code>done</code> — все подзадачи закрыты или задача явно отмечена выполненной; иначе <code>overdue</code> — если <code>currentDeadline</code> в прошлом; иначе <code>in_progress</code> — если есть прогресс по подзадачам; иначе <code>new</code>.</p>

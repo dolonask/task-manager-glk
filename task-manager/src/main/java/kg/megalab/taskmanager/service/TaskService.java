@@ -8,6 +8,7 @@ import kg.megalab.taskmanager.domain.Task;
 import kg.megalab.taskmanager.domain.TaskStatus;
 import kg.megalab.taskmanager.domain.User;
 import kg.megalab.taskmanager.dto.subtask.SubtaskResponse;
+import kg.megalab.taskmanager.dto.task.CloseTaskRequest;
 import kg.megalab.taskmanager.dto.task.CreateTaskRequest;
 import kg.megalab.taskmanager.dto.task.TaskDetailResponse;
 import kg.megalab.taskmanager.dto.task.TaskListItemResponse;
@@ -213,7 +214,7 @@ public class TaskService {
         taskRepository.delete(task);
     }
 
-    public TaskDetailResponse close(UUID id) {
+    public TaskDetailResponse close(UUID id, CloseTaskRequest request) {
         Task task = findOrThrow(id);
         UserPrincipal principal = SecurityUtils.currentUser();
         // Spec §6.1 grants this to "admin, head курируемого СП" — interpreted as the head
@@ -224,6 +225,7 @@ public class TaskService {
         }
         TaskDetailResponse before = toDetail(task);
         task.setClosedAt(Instant.now());
+        task.setCloseComment(request.comment());
         task = taskRepository.save(task);
         auditLogService.record("Task", task.getId(), "task.close", before, toDetail(task));
         return toDetail(task);
@@ -240,7 +242,7 @@ public class TaskService {
                 task.getAssignee() != null ? task.getAssignee().getFullName() : null,
                 task.getPriority().getValue(), task.getInitialDeadline(), task.getCurrentDeadline(),
                 computeStatus(task).getValue(), computeProgress(task),
-                task.getCreatedAt(), task.getClosedAt()
+                task.getCreatedAt(), task.getClosedAt(), task.getCloseComment()
         );
     }
 
@@ -249,7 +251,7 @@ public class TaskService {
                 .map(s -> new SubtaskResponse(s.getId(), task.getId(), s.getTitle(), s.getDescription(),
                         s.getAssignee() != null ? s.getAssignee().getId() : null,
                         s.getAssignee() != null ? s.getAssignee().getFullName() : null,
-                        s.getDeadline(), s.isDone()))
+                        s.getDeadline(), s.isDone(), s.getDoneComment()))
                 .toList();
         List<TransferRequestResponse> transferRequests = transferRequestRepository.findByTask(task).stream()
                 .map(kg.megalab.taskmanager.mapper.TransferRequestMapper::toResponse)
@@ -262,7 +264,7 @@ public class TaskService {
                 task.getAssignee() != null ? task.getAssignee().getFullName() : null,
                 task.getPriority().getValue(), task.getInitialDeadline(), task.getCurrentDeadline(),
                 computeStatus(task).getValue(), computeProgress(task),
-                task.getCreatedAt(), task.getClosedAt(),
+                task.getCreatedAt(), task.getClosedAt(), task.getCloseComment(),
                 subtasks, transferRequests
         );
     }

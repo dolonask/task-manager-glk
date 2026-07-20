@@ -3,6 +3,7 @@ package kg.megalab.taskmanager.controller;
 import jakarta.validation.Valid;
 import kg.megalab.taskmanager.dto.subtask.CreateSubtaskRequest;
 import kg.megalab.taskmanager.dto.subtask.SubtaskResponse;
+import kg.megalab.taskmanager.dto.subtask.ToggleSubtaskRequest;
 import kg.megalab.taskmanager.dto.subtask.UpdateSubtaskRequest;
 import kg.megalab.taskmanager.service.SubtaskService;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -40,8 +41,9 @@ public class SubtaskController {
 
     @PatchMapping("/subtasks/{id}/toggle")
     @PreAuthorize("hasAnyRole('ADMIN', 'HEAD', 'EMPLOYEE')")
-    public SubtaskResponse toggle(@PathVariable UUID id) {
-        return subtaskService.toggle(id);
+    public SubtaskResponse toggle(@PathVariable UUID id,
+                                   @RequestBody(required = false) ToggleSubtaskRequest request) {
+        return subtaskService.toggle(id, request);
     }
 
     @DeleteMapping("/subtasks/{id}")

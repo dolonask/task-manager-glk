@@ -5,9 +5,11 @@ import kg.megalab.taskmanager.domain.Subtask;
 import kg.megalab.taskmanager.domain.Task;
 import kg.megalab.taskmanager.dto.subtask.CreateSubtaskRequest;
 import kg.megalab.taskmanager.dto.subtask.SubtaskResponse;
+import kg.megalab.taskmanager.dto.subtask.ToggleSubtaskRequest;
 import kg.megalab.taskmanager.dto.subtask.UpdateSubtaskRequest;
 import kg.megalab.taskmanager.exception.ForbiddenException;
 import kg.megalab.taskmanager.exception.NotFoundException;
+import kg.megalab.taskmanager.exception.ValidationException;
 import kg.megalab.taskmanager.repository.SubtaskRepository;
 import kg.megalab.taskmanager.repository.UserRepository;
 import kg.megalab.taskmanager.security.SecurityUtils;
@@ -84,7 +86,7 @@ public class SubtaskService {
         return toResponse(subtask);
     }
 
-    public SubtaskResponse toggle(UUID id) {
+    public SubtaskResponse toggle(UUID id, ToggleSubtaskRequest request) {
         Subtask subtask = findOrThrow(id);
         UserPrincipal principal = SecurityUtils.currentUser();
         boolean isOwnAssignee = subtask.getAssignee() != null && subtask.getAssignee().getId().equals(principal.id());
@@ -95,7 +97,18 @@ public class SubtaskService {
             throw new ForbiddenException("Нет прав отмечать выполнение этой подзадачи");
         }
         SubtaskResponse before = toResponse(subtask);
-        subtask.setDone(!subtask.isDone());
+        boolean newDone = !subtask.isDone();
+        if (newDone) {
+            String comment = request != null ? request.comment() : null;
+            if (comment == null || comment.isBlank()) {
+                throw new ValidationException(
+                        "Поле \"comment\" обязательно для заполнения при отметке выполнения", "comment");
+            }
+            subtask.setDoneComment(comment);
+        } else {
+            subtask.setDoneComment(null);
+        }
+        subtask.setDone(newDone);
         subtask = subtaskRepository.save(subtask);
         auditLogService.record("Subtask", subtask.getId(), "subtask.toggle", before, toResponse(subtask));
         return toResponse(subtask);
@@ -120,7 +133,7 @@ public class SubtaskService {
                 subtask.getId(), subtask.getTask().getId(), subtask.getTitle(), subtask.getDescription(),
                 subtask.getAssignee() != null ? subtask.getAssignee().getId() : null,
                 subtask.getAssignee() != null ? subtask.getAssignee().getFullName() : null,
-                subtask.getDeadline(), subtask.isDone()
+                subtask.getDeadline(), subtask.isDone(), subtask.getDoneComment()
         );
     }
 }

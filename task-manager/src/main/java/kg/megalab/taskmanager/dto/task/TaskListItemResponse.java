@@ -20,6 +20,7 @@ public record TaskListItemResponse(
         String status,
         double progress,
         Instant createdAt,
-        Instant closedAt
+        Instant closedAt,
+        String closeComment
 ) {
 }
