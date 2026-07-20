@@ -102,12 +102,15 @@ public class AnalyticsService {
                 .toList();
         List<Task> allTasks = taskRepository.findAll();
         return boardMembers.stream().map(member -> {
-            List<Task> created = allTasks.stream()
-                    .filter(t -> t.getCreator().getId().equals(member.getId()))
+            List<UUID> curatedDepartmentIds = departmentRepository.findByCuratorId(member.getId()).stream()
+                    .map(Department::getId)
                     .toList();
-            Map<String, Long> breakdown = created.stream()
+            List<Task> curated = allTasks.stream()
+                    .filter(t -> curatedDepartmentIds.contains(t.getDepartment().getId()))
+                    .toList();
+            Map<String, Long> breakdown = curated.stream()
                     .collect(Collectors.groupingBy(t -> TaskService.computeStatus(t).getValue(), Collectors.counting()));
-            return new BoardMemberAnalyticsResponse(member.getId(), member.getFullName(), created.size(), breakdown);
+            return new BoardMemberAnalyticsResponse(member.getId(), member.getFullName(), curated.size(), breakdown);
         }).toList();
     }
 

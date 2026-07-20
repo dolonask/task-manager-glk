@@ -266,7 +266,7 @@
     <tr><th style="width:250px;">Метод и путь</th><th>Описание</th><th style="width:150px;">Доступ</th></tr>
     <tr><td><span class="tag get">GET</span><code>/analytics/summary</code></td><td>Сводные KPI: всего задач, выполнено, в работе, просрочено, % исполнения, % соблюдения сроков. Фильтры: <code>from</code>, <code>to</code>, <code>departmentId</code>, <code>boardMemberId</code></td><td>по роли, разд. 8</td></tr>
     <tr><td><span class="tag get">GET</span><code>/analytics/departments</code></td><td>Разрез по СП: нагрузка, доля выполнения, число просрочек</td><td>по роли</td></tr>
-    <tr><td><span class="tag get">GET</span><code>/analytics/board-members</code></td><td>Разрез по членам Правления: количество поставленных задач и их статусное распределение</td><td><code>admin</code>, <code>board</code></td></tr>
+    <tr><td><span class="tag get">GET</span><code>/analytics/board-members</code></td><td>Разрез по членам Правления: общее число задач по курируемым СП и их статусное распределение</td><td><code>admin</code>, <code>board</code></td></tr>
     <tr><td><span class="tag get">GET</span><code>/analytics/transfer-requests</code></td><td>Число заявок, доля согласованных/отклонённых, средняя величина переноса в днях, подразделения-лидеры по числу переносов</td><td><code>admin</code>, <code>board</code></td></tr>
     <tr><td><span class="tag get">GET</span><code>/analytics/registry</code></td><td>Реестр ближайших сроков и просроченных задач</td><td>по роли</td></tr>
     <tr><td><span class="tag get">GET</span><code>/export/tasks?format=xlsx|pdf</code></td><td>Выгрузка реестра задач с применёнными фильтрами</td><td><code>admin</code>, <code>board</code></td></tr>

@@ -1,11 +1,13 @@
 package kg.megalab.taskmanager.service;
 
 import kg.megalab.taskmanager.domain.Department;
+import kg.megalab.taskmanager.domain.Role;
 import kg.megalab.taskmanager.domain.User;
 import kg.megalab.taskmanager.dto.department.CreateDepartmentRequest;
 import kg.megalab.taskmanager.dto.department.DepartmentResponse;
 import kg.megalab.taskmanager.dto.department.UpdateDepartmentRequest;
 import kg.megalab.taskmanager.exception.NotFoundException;
+import kg.megalab.taskmanager.exception.ValidationException;
 import kg.megalab.taskmanager.repository.DepartmentRepository;
 import kg.megalab.taskmanager.repository.UserRepository;
 import org.springframework.stereotype.Service;
@@ -37,7 +39,7 @@ public class DepartmentService {
     public DepartmentResponse create(CreateDepartmentRequest request) {
         Department department = new Department();
         department.setName(request.name());
-        department.setCurator(resolveUser(request.curatorId()));
+        department.setCurator(resolveCurator(request.curatorId()));
         department.setHead(resolveUser(request.headId()));
         department = departmentRepository.save(department);
         auditLogService.record("Department", department.getId(), "department.create", null, toResponse(department));
@@ -52,7 +54,7 @@ public class DepartmentService {
             department.setName(request.name());
         }
         if (request.curatorId() != null) {
-            department.setCurator(resolveUser(request.curatorId()));
+            department.setCurator(resolveCurator(request.curatorId()));
         }
         if (request.headId() != null) {
             department.setHead(resolveUser(request.headId()));
@@ -71,6 +73,14 @@ public class DepartmentService {
             return null;
         }
         return userRepository.findById(id).orElseThrow(() -> new NotFoundException("User", id));
+    }
+
+    private User resolveCurator(UUID id) {
+        User curator = resolveUser(id);
+        if (curator != null && curator.getRole() != Role.BOARD) {
+            throw new ValidationException("Курирующим может быть назначен только член правления", "curatorId");
+        }
+        return curator;
     }
 
     private DepartmentResponse toResponse(Department department) {

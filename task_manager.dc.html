@@ -389,7 +389,7 @@
                   <sc-for list="{{ boardStats }}" as="b" hint-placeholder-count="3">
                     <div style="display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid #F0ECE3;">
                       <div style="font-size:13px;font-weight:600;">{{ b.name }}</div>
-                      <div style="font-size:12px;color:#6B6153;">поставлено {{ b.count }} · выполнено {{ b.done }} · просрочено {{ b.overdue }}</div>
+                      <div style="font-size:12px;color:#6B6153;">задач в курируемых СП {{ b.count }} · выполнено {{ b.done }} · просрочено {{ b.overdue }}</div>
                     </div>
                   </sc-for>
                 </div>
@@ -1013,7 +1013,8 @@ class Component extends DCLogic {
     });
 
     const boardStats = s.users.filter(u => u.role === 'board').map(b => {
-      const bTasks = enrichedTasks.filter(t => t.raw.creatorId === b.id);
+      const curatedDeptIds = s.departments.filter(d => d.curatorId === b.id).map(d => d.id);
+      const bTasks = enrichedTasks.filter(t => curatedDeptIds.includes(t.raw.deptId));
       return { name: b.name, count: bTasks.length, done: bTasks.filter(t => t.status === 'Выполнено').length, overdue: bTasks.filter(t => t.status === 'Просрочено').length };
     });
 
